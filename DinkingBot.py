@@ -1,0 +1,778 @@
+import nest_asyncio
+import numpy as np
+import pandas as pd
+import time
+import matplotlib
+import os
+import sys
+import requests
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+nest_asyncio.apply()
+
+
+#https://github.com/whambulance/markov-bot
+token = open("token.txt", "r").read()
+
+def list_creator(names):
+    N = len(names)
+    if N == 1:
+        out = names[0]
+    elif N > 1:
+        sep = [', ']*(N-1)
+        sep[-1] = ' and '
+        out = names[0]
+        for i in range(N-1):
+            out += sep[i] + names[i+1] 
+    else:
+        sep = [' and ']
+        out = names[0] + sep[0] + names[1]
+    return out
+
+def Calculator(string):
+    if 'os.' in string or 'sys.' in string:
+        return 'Module not allowed'
+    result = {}
+    try:
+        exec('a =%s' % string,None,result)
+        print('%s'%result['a'] , str(string))
+        if str(result['a']) != str(string):
+            return result['a']
+    except:
+        return 'Invalid syntax'
+
+# def current_stream(hour =int(time.strftime('%H')) ): #for raid parties
+#     streams = ['therealgpf','thesweedrunner','elxrdj','cptn_jaxx','ditz33']
+#     times = [18,19,20,21,22]
+#     current_hour = hour
+#     if current_hour in times:
+#         i =  [i for i in range(len(times)) if times[i] == current_hour][0]
+#         string = 'Currently %s is live at https://www.twitch.tv/%s' %(streams[i],streams[i])
+#     else:
+#         string = 'No stream currently running'
+#     return string
+
+def week_hour():
+    day = int(time.strftime('%w'))-1
+    hour_of_day = int(time.strftime('%H',time.gmtime()))
+    if day == -1:
+        day = 6
+    return day*24+hour_of_day+2
+def dink_time():
+    if week_hour() >= 4 and week_hour() <= (4*24+16):
+        return False
+    else:
+        return True
+
+
+def live_on_twitch(channelName='therealgpf'):
+    contents = requests.get('https://www.twitch.tv/' + channelName).content.decode('utf-8')
+    if 'isLiveBroadcast' in contents: 
+        print(channelName + ' is live')
+        return True
+    else:
+        print(channelName + ' is not live')
+        return False
+
+
+file = pd.read_csv('Dinking.csv')
+IDs = list(file['ID'])
+points = list(file['points'])
+Totaldink = list(file['dinks'])
+TotalHandouts = list(file['Handouts'])
+
+
+def Delete(User_ID):
+    i_ID = [i for i in range(len(IDs)) if IDs[i] == User_ID][0]
+    leaving_points = points[i_ID]
+    del IDs[i_ID]
+    del points[i_ID]
+    del Totaldink[i_ID]
+    del TotalHandouts[i_ID]
+    print("Leaving with %i points"%leaving_points)
+    if leaving_points < 5:
+        P =  5-leaving_points
+        i = 0
+        while i < P:
+            points[np.random.choice(np.arange(len(IDs)),p=np.array(points)/np.sum(points))] += -1
+            i += 1
+    elif leaving_points > 5:
+        P =  leaving_points-5
+        i = 0
+        while i < P:
+            pp = 1/(np.array(points)+1e-5)/np.sum(1/(np.array(points)+1e-5))
+            points[np.random.choice(np.arange(len(IDs)),p=pp)] += +1
+            i += 1
+    
+    df = pd.DataFrame({'ID':IDs , 'points':points , 'dinks':Totaldink , 'Handouts':TotalHandouts})
+    df.to_csv('Dinking.csv',index=False)
+    
+def Clear_all():
+    IDs.clear()
+    points.clear()
+    Totaldink.clear()
+    TotalHandouts.clear()
+    df = pd.DataFrame({'ID':IDs , 'points':points , 'dinks':Totaldink , 'Handouts':TotalHandouts})
+    df.to_csv('Dinking.csv',index=False)
+    
+def prob_proportionality(points,exponent=2):
+    return np.array(points)**exponent/np.sum(np.asarray(points)**exponent)
+
+def Random(IDs,points,N=1):
+    return np.random.choice(IDs,size=N,p=prob_proportionality(points))
+
+
+
+
+def FirstPlayer(ID):
+    IDs.append(ID)
+    points.append(5)
+    Totaldink.append(0)
+    TotalHandouts.append(0)
+
+
+def Update(caller,dinkees,Handout=False): #dinkees must be a list
+    N = len(dinkees)
+    if caller in IDs and not Handout:
+        i_caller = [i for i,ID in enumerate(IDs) if ID == caller][0]
+        points[i_caller] +=  N
+        if N < 2:
+            Totaldink[i_caller] += 1
+        else:
+            Totaldink[i_caller] += N
+    elif not Handout:
+        IDs.append(caller)
+        points.append(6)
+        Totaldink.append(1)
+        TotalHandouts.append(0)
+    
+    
+    for i,ID in enumerate(dinkees):
+        if ID in IDs and not Handout:
+            i_dinked = [i for i,iD in enumerate(IDs) if iD == ID][0]
+            TotalHandouts[i_dinked] += 1
+            if points[i_dinked]>0:
+                points[i_dinked] += -1
+        if ID in IDs and Handout:
+            i_dinked = [i for i,iD in enumerate(IDs) if iD == ID][0]
+            TotalHandouts[i_dinked] += 1
+                
+    df = pd.DataFrame({'ID':IDs , 'points':points , 'dinks':Totaldink , 'Handouts':TotalHandouts})
+    df.to_csv('Dinking.csv',index=False)
+def Reset():
+    for i in range(len(IDs)):
+        points[i] = 5
+        Totaldink[i] = 0
+        TotalHandouts[i] = 0
+    df = pd.DataFrame({'ID':IDs , 'points':points , 'dinks':Totaldink , 'Handouts':TotalHandouts})
+    df.to_csv('Dinking.csv',index=False)
+
+drunk_gif_list = ['https://i.makeagif.com/media/9-21-2015/mbewqE.gif'
+                  ,'https://media.giphy.com/media/KctNhiy99LoLBTgLNO/giphy.gif'
+                  ,'https://i.pinimg.com/originals/5b/8c/32/5b8c32f2177993c8c177548f8696f97f.gif'
+                  ,'https://media.giphy.com/media/3oEjI9T0ixjZCFwi8U/giphy.gif'
+                  ,'https://media.giphy.com/media/E3L5goMMSoAAo/giphy.gif'
+                  ,'https://media.giphy.com/media/K34FVrUx8ggyA/giphy.gif'
+                  ,'https://media4.giphy.com/media/l0Iy8G3PwyahZST2E/200.gif'
+                  ,'https://media.tenor.com/images/d26c4abe0085bd1b0e29acacda30a769/tenor.gif'
+                  ,'https://media4.giphy.com/media/26xBwu0ZZVWbG7gA0/giphy.gif'
+                  ,'https://media.giphy.com/media/llZVEOIi9tCVxFskpY/giphy.gif'
+                  ,'https://media.giphy.com/media/NCZQhdPbCNmwM/giphy.gif'
+                  ,'https://media.giphy.com/media/Jrk7tpcTZtwcg/giphy.gif'
+                  ,'https://media.giphy.com/media/NPAB0vUr8nfR6/giphy.gif'
+                  ]
+Mandy_vids = ['Oh you want MANDY? Here is a Mandy set with fucking VILLAIN as MC:  https://youtu.be/WJtVm25iP80'
+              ,"I hope you're ready for some shitty mixing.... https://youtu.be/PPkFMtrinZU"
+              ,'I cannot believe you actually want this... https://youtu.be/nFf9s2e2iCc'
+              ,'https://youtu.be/Y6ddPorsZy8 There you go.. Unfortunately.'
+              ,'We are all online, so why not cry using this online set with Mandy https://youtu.be/IfQYM1Ugbek'
+              ]
+
+
+
+import random
+def rotate(l, n):
+    return l[n:] + l[:n]
+orders = [[0]]*2
+for i in range(48):
+    orders.append(list(np.arange(i+2)))
+    random.shuffle(orders[i+2])
+
+def Link_selector(link_list):
+    N = len(link_list)
+    choice = orders[N][0]
+    orders[N] = rotate(orders[N],1)
+    return link_list[choice]
+
+def liner(string):
+    sep = '\n'
+    out = string[0]
+    for i in range(len(string)-1):
+        out += sep + string[i+1]
+    return out
+
+
+
+import discord
+import asyncio
+client = discord.Client()
+@client.event  # event decorator/wrapper
+async def on_ready():
+    print(f"Logged in as {client.user}")
+    # text_channel_list = []
+    # for channel in client.get_all_channels():
+    #     text_channel_list.append(channel.name)
+    # print(text_channel_list)
+
+
+
+
+
+
+
+#-----------------------------------------------------------------------
+spam_commands = ["bbcum/cum"
+                 ,"cope/seethe"
+                 ,"bbfriend"
+                 ,"bbcyka/bbblyat"
+                 ,"bbMandy"
+                 ,"bbshitpost"
+                 ]
+spam_desc     = ["Random cum related stuff."
+                 ,"Random cope/seethe related stuff."
+                 ,"Random wholesome related stuff."
+                 ,"Random russia related stuff."
+                 ,"Random Mandy related stuff."
+                 ,"We believe you get it by now"
+                 ]
+#-----------------------------------------------------------------------
+utility_commands = ["Hello"
+                    ,"!zoom"
+                    ,"?live/!live"
+                    ,"GPF"
+                    ,"mizzy"
+                    ,"horren"
+                    ]
+utility_desc    = ["Checks if Villain is online"
+                   ,"GPF/Mizzy zoom call."
+                   ,"Check if a twitch user is online"
+                   ,"GPF    twitch link an live status"
+                   ,"Mizzy  twitch link an live status"
+                   ,"Horren twitch link an live status"
+                   ]
+#-----------------------------------------------------------------------
+dinking_commands = [ "bbdink"
+                    ,"bbdink [user]"
+                    ,"opt in"
+                    ,"opt out"
+                    ,"bbtally"
+                    ,"bbprob"
+                    ]
+dinking_desc = ["Dinks a random user (ALTs: bbskål & bbprost)."
+                ,"Dinks a specific user or users. (supports ALTs)"
+                ,"Join the dinking game."
+                ,"Leave the dinking game."
+                ,"Tally for players in the game."
+                ,"probability to get selected at random"
+                ]
+#-----------------------------------------------------------------------
+admin_commands = [ "bbreset"
+                    ,"bbspam"
+                    ,"bboverride"
+                    ,"bbvillain"
+                    ,"opt out [user]"
+                    ,"bbtime N,t"
+                    ,"bbclear"
+                    ]
+admin_desc = ["Resets all tallys and points (5 points 0 dinks/drinks)."
+                ,"Toggle the spam commands."
+                ,"Toggles the dinking time blocker, resets upon restart."
+                ,"Dink all players in the game (30min cooldown)."
+                ,"opt a specific user out."
+                ,"Trigger *N* random dinks by the bot spaced *t* minutes apart."
+                ,"Remove all players and reset."
+                ]
+#-----------------------------------------------------------------------
+def string_gen(commands,desc):
+    command_length = [len(s) for s in commands]
+    N_max = max(command_length)
+    extended = []
+    for i,s in enumerate(commands):
+        extended.append( "`%s` " %   (s + " "*(  N_max-command_length[i]) + ":"  )   )
+        extended[i] += desc[i]+'\n'
+    return extended
+
+
+
+
+Fun = True
+admin_dink_time_override = False
+T0 = [0]
+T_dink = [0]
+T_hey = [0]
+T_hello = [0]
+Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
+bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
+
+#User specific time cooldown on hellocommand (6 hours)
+#Add markov to the bot
+
+
+Channels = list(np.loadtxt('Channels.txt',np.int64))
+
+@client.event
+async def on_message(message):
+    if message.author != client.user and message.channel.id in Channels:
+        global Fun
+        global admin_dink_time_override
+        print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
+
+        
+        if 'hello villain' == message.content.lower() or 'hey villain' == message.content.lower():
+            if time.time()-T_hey[-1] > 60:
+                T_hey.append(time.time())
+                await message.reply('Hey x, weekend warrior!')
+        if 'hello' == message.content.lower():
+            if time.time()-T_hello[-1] > 60:
+                T_hello.append(time.time())
+                await message.reply('Hey weekend warrior!')
+        
+        if "!zoom" == message.content.lower():
+            await message.channel.send('GPF: https://hot.greazy.co/zoom')
+            
+        if "GPF" == message.content or "bbgpf" == message.content.lower():
+            if live_on_twitch('therealgpf'):
+                await message.channel.send('Watch GPF live at: https://www.twitch.tv/therealgpf')
+            else:
+                await message.channel.send('GPF is currently offline :( (https://www.twitch.tv/therealgpf)')
+        if "mizzy" == message.content.lower() or "bbmizzy" == message.content.lower():
+            if live_on_twitch('mizzbehaveofficial'):
+                await message.channel.send('Watch MizzBehave live at: https://www.twitch.tv/mizzbehaveofficial')
+            else:
+                await message.channel.send('MizzBehave is currently offline :( (https://www.twitch.tv/mizzbehaveofficial)')
+        if "horren" == message.content.lower() or "bbhorren" == message.content.lower():
+            if live_on_twitch('captainhorren'):
+                await message.channel.send('Watch horren live at: https://www.twitch.tv/captainhorren')
+            else:
+                await message.channel.send('Horren is currently offline :( (https://www.twitch.tv/captainhorren)')
+        
+        
+        if "?live" in message.content.lower()[:5] or "!live" in message.content.lower()[:5]:
+            channel_Name = message.content[6:]
+            if live_on_twitch(channel_Name):
+                await message.channel.send("YAY! %s is live right now! https://www.twitch.tv/%s" % (channel_Name,channel_Name))
+            else:
+                await message.channel.send("Oh nooo... %s seems to be offline :(" % (channel_Name))
+        
+            
+            
+        
+        
+        
+        if 'bbspam' in message.content.lower()[:6] and message.author.id in Trusted_IDs:
+            if not Fun:
+                Fun = True
+                await message.channel.send('Sperm now enabled')
+            elif Fun:
+                Fun = False
+                await message.channel.send('Sperm now disabled')
+        if 'bbspam' in message.content.lower()[:6] and message.author.id not in Trusted_IDs:
+            await message.channel.send(f'{message.author.mention}. Only LeCerial and Truxa has the right to touch sperm. 👀')
+            
+        if Fun:
+            if 'bbmandy' in message.content.lower()[:7]:
+                await message.channel.send(Link_selector(Mandy_vids))
+            if 'bbengland' in message.content.lower()[:9]:
+                await message.channel.send(file=discord.File('./images/england/%s' % Link_selector([s for s in os.listdir("./images/england/") if '.ini' not in s])))
+            if 'cope' in message.content.lower()[:4] or 'seethe' in message.content.lower()[:6]:
+                await message.channel.send(file=discord.File('./images/cope/%s' % Link_selector([s for s in os.listdir("./images/cope/") if '.ini' not in s])))
+            if 'bbfren' in message.content.lower()[:6] or 'bbfrien' in message.content.lower()[:7] or 'bbfriend' in message.content.lower()[:8]:
+                await message.channel.send(file=discord.File('./images/fren/%s' % Link_selector([s for s in os.listdir("./images/fren/") if '.ini' not in s])) )
+            if 'bbcyka' in message.content.lower()[:6] or 'bbrus' in message.content.lower()[:5] or 'bbblyat' in message.content.lower()[:7]:
+                await message.channel.send(file=discord.File('./images/russia/%s' % Link_selector([s for s in os.listdir("./images/russia/") if '.ini' not in s])) )
+            if 'bbcum' in message.content.lower()[:5]  or 'cum' in message.content.lower()[:3]:
+                await message.channel.send(file=discord.File('./images/cum/%s' % Link_selector([s for s in os.listdir("./images/cum/") if '.ini' not in s])) )        
+            if 'bbshitpost' in message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl'== message.content.lower():
+                await message.channel.send(file=discord.File('./images/shitpost/%s' % Link_selector([s for s in os.listdir("./images/shitpost/") if '.ini' not in s])) )
+        
+            
+            
+        
+            
+        if 'calculate' in message.content.lower()[:9] and message.author.id in Trusted_IDs:
+            await message.channel.send(Calculator(message.content[10:]))
+        # if 'raidtrain' in message.content.lower():
+        #     await message.channel.send(current_stream(int(time.strftime('%H'))))
+        #     if int(time.strftime('%H'))<18:
+        #         await message.channel.send('Planned schedule:')
+        #         await message.channel.send('https://cdn.discordapp.com/attachments/865152397192855572/868789061198966804/Semen.png')
+            
+            
+
+        if 'fuck off bot' == message.content.lower() and message.author.id in Trusted_IDs:
+            await message.channel.send('Okay bye')
+            await client.close()
+        if 'fuck off bot then come back' == message.content.lower() and message.author.id in Trusted_IDs:
+            await message.channel.send('Okay restarting')
+            os.execv(sys.executable, ['python'] + sys.argv)
+
+        
+        N_requirement = 3
+        message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
+        async for msg in message.channel.history(limit=7+N_requirement):
+            all_message_history.append(msg.content)
+            all_ID_history.append(msg.author.id)
+            if msg.author != client.user:
+                message_history.append(msg.content)
+                ID_history.append(msg.author.id)
+        if len(np.unique([x.lower() for x in message_history[:N_requirement]])) == 1:
+            if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
+                await message.channel.send(message.content)
+        
+        if 'bbclear' == message.content.lower() and message.author.id in Trusted_IDs:
+            Clear_all()
+            await message.channel.send('All dinking data removed')
+        
+        if 'bbhelp' in message.content.lower():
+            embed = discord.Embed(title=f'List of {client.user.name}™️ commands:',colour=discord.Colour.orange())
+            embed.set_author(name=client.user.name, icon_url=client.user.avatar_url)
+            embed.add_field(name='Dinking Related (Fri 4pm - Mon 4am CET):',    value=''.join(string_gen(dinking_commands,dinking_desc)),inline=False)
+            embed.add_field(name='Utility commands:',                       value=''.join(string_gen(utility_commands,utility_desc)),inline=False)
+            embed.add_field(name='Spam related:',                           value=''.join(string_gen(spam_commands,spam_desc)),inline=False)
+            embed.set_footer(text=[f'{client.user.name}™️ takes no responsibility for any following or imminent alcoholism caused by dinking. \n'
+                              +'Apart from random handouts given by the bot, and people dinking other people specifically '
+                              +'(prevention of this is WIP), a maximum of 5 dinks more than the amount of dinks handed out can be '
+                              +'received. Probability to be selected at random is based on the square of normalized points, dinking '
+                              +'someone will give you their point. Every player starts with 5 points, hence the 5 drink max by random '
+                              +'selection. The game is set up to dink the people who dink the most. \n'
+                              + ["Dinking is active in %i hours" % (112-week_hour()) if not dink_time() else 'Dinking is active RIGHT NOW!'][0]
+                              ][0] )
+            await message.reply(embed=embed)
+            
+            if message.author.id in Trusted_IDs:
+                embed = discord.Embed(title=f'List of {client.user.name}™️ commands:',colour=discord.Colour.red())
+                embed.add_field(name='Admin commands:',value=''.join(string_gen(admin_commands,admin_desc)),inline=False)
+                embed.set_footer(text=['Current status:\n'
+                                       +"Dink Timer   : %s\n" % ( not admin_dink_time_override )
+                                       +"Spam enabled : %s\n" % Fun
+                                       ][0])
+                await message.author.send("You are in the trusted IDs, so here are the admin commands.",embed=embed)
+            
+
+
+
+
+#------------------------------------- DINKING RELATED STUFF-----------------------------------------#
+
+        bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain']
+        def check_command(msg=message.content.lower()):
+            for s in bc:
+                if s in msg[:len(s)]:
+                    return True
+            return False
+
+
+        
+        if 'bboverride' == message.content.lower() and message.author.id in Trusted_IDs:
+            if not admin_dink_time_override:
+                admin_dink_time_override = True
+                await message.channel.send('Dinking now enabled')
+            elif admin_dink_time_override:
+                admin_dink_time_override = False
+                await message.channel.send('Dinking now back to normal schedule. %i Hours left'%(112-week_hour()))
+        
+        Nicks = []
+        for ID in IDs:
+            username = await client.fetch_user(ID)
+            Nicks.append(str(username)[:-5]) 
+        if dink_time() or admin_dink_time_override or message.author.id in Trusted_IDs:
+            
+            
+            async def Tally(Message=None):
+                embed2 = discord.Embed(title= 'Dinking Tally')
+                embed2.add_field(name='User', value=liner(["<@%i>" % i for i in IDs]))
+                embed2.add_field(name='Dinks used', value=liner(["%i" % i for i in Totaldink]))
+                embed2.add_field(name='Dinks recieved', value=liner(["%i" % i for i in TotalHandouts]))
+                embed2.set_thumbnail(url=Link_selector(drunk_gif_list))
+                if Message == None:
+                    await message.reply(embed=embed2)
+                else:
+                    await message.channel.send(Message,embed=embed2)
+            async def PROB(Message=None):
+                embed2 = discord.Embed(title= 'Dinking Probability')
+                embed2.add_field(name='User', value=liner(["<@%i>" % i for i in IDs]))
+                embed2.add_field(name='Probability', value=liner(["%.3g%%" % i for i in (100*prob_proportionality(points))]))
+                if Message == None:
+                    await message.channel.send(embed=embed2)
+                else:
+                    await message.reply(Message,embed=embed2)
+    
+    
+            
+    
+            if "bbdink" in message.content.lower()[:6] or "bbprost" in message.content.lower()[:7] or "bbskål" in message.content.lower()[:6]:
+                if len(IDs)<1:
+                    FirstPlayer(message.author.id)
+                sponsor = " (message sponsored by juizzx)"
+                message_list = [f'Welp..! {message.author.name} wants %s to DINK ONE! Take one for the team and down your entire glass!'+sponsor
+                                ,f'Raise your hands, Weekend Warrior! And make sure there is a shot in it, cause {message.author.name} wants %s to DINK ONE MOAR!'+sponsor
+                                ,f"I'm an Alcoholic 'til the day that I die! And so is %s, {message.author.name} chose you to DINK ONE MOAR now!"+sponsor
+                                ,f"Are you as good as Villain with drops?! Then %s should drop down ONE MOAR DINK cause {message.author.name} said so!"+sponsor
+                                ,f"HEEEEEE! HOOOOOO! %s GOT VILLAINED by {message.author.name}! DINK NOW!"+sponsor
+                                ,f"Make some nooooise! It's time to DINK ONE MOAR for %s, thanks to {message.author.name}!"+sponsor
+                                ,f"At the top of your lungs, give it up for {message.author.name} that DINKED %s! Down ONE MOAR shot right now!"+sponsor
+                                ,f"I can't heaaar you, Weekend Warriors! Everyone put their hands together for the next DINK! {message.author.name} VILLAINED %s!"+sponsor
+                                ,f"Oh shit no. %s just got VILLAINED by {message.author.name}!!  Now YOU HAVE TO DINK ONE MOAR, otherwise you will be haunted by Villain tonight."+sponsor
+                                ]
+                
+                sponsor =  " (Nachricht gesponsert von juizzx)"
+                message_list_de = [f'Nun..! {message.author.name} will, dass %s EINEN DINKT! Nimm einen für’s ganze Team und DINK dein ganzes Glas!'+sponsor
+                                ,f'Hoch die Hände, Weekend Warrior! Und stell‘ sicher, dass sich ein Shot darin befindet, denn {message.author.name} will, dass %s NOCH EINEN DINKT!'+sponsor
+                                ,f"Ich bin Alkoholiker bis zu dem Tag, an dem ich sterbe! Und so ist auch %s, {message.author.name} hat dich ausgewählt um jetzt EINEN ZU DINKEN!"+sponsor
+                                ,f"Bist du so gut wie Villain mit Drops?! Dann sollte %s NOCH EINEN DINK hinunterstürzen, denn {message.author.name} verlangt es so!"+sponsor
+                                ,f"HEEEEEE! HOOOOOO! %s wurde von {message.author.name} GEVILLAINED! DINK JETZT!"+sponsor
+                                ,f"Macht ein bisschen Lärm! Dank {message.author.name} ist es Zeit für %s, NOCH EINEN ZU DINKEN!"+sponsor
+                                ,f"Aus vollem Hals, macht Lärm für {message.author.name}, denn {message.author.name} hat %s GEDINKED! Kipp jetzt NOCH EINEN MEHR runter!"+sponsor
+                                ,f"Ich kann euch nicht hööööören, Weekend Warriors! Klappt mal alle eure Hände zusammen für den nächsten DINK! {message.author.name} hat %s GEVILLAINED!"+sponsor
+                                ,f"Oh scheiße. %s wurde gerade von {message.author.name} GEVILLAINED!!  DINK noch einen, sonst wird Villain dich heute Nacht heimsuchen."+sponsor
+                                ]
+                
+                sponsor = " (Denne meddelse er sponsoreret af juizzx)"
+                message_list_dk = [f'Åhh nej! {message.author.name} vil have %s til at DINK EN! Tag en for holdet og drik hele dit glas!'+sponsor
+                                ,f'Ræk dine hænder op, Weekend Kriger! Og sikrer dig at der er et shot i dem, fordi {message.author.name} vil have at %s skal DINK EN MERE!'+sponsor
+                                ,f"Jeg er en alkoholiker til den dag jeg DØR! Og det er %s også! {message.author.name} har valgt dig til at DINK EN MERE!"+sponsor
+                                ,f"Er du lige så god som Villain til at bunde?! Så skal %s bunde EN MERE DINK fordi {message.author.name} sagde det!"+sponsor
+                                ,f"HEEEEEE! HOOOOOO! %s BLEV VILLAINERET af {message.author.name}! DINK NU!"+sponsor
+                                ,f"Lav noget LAAARM! Det er tid til at DINK EN MERE for %s, takket være {message.author.name}!"+sponsor
+                                ,f"Lad os høre jer, give det op for {message.author.name} der har DINKERET %s! Drik ET MERE shot lige nu!"+sponsor
+                                ,f"Jeg kan ikke høøøre jer, Weekend Krigere! Alle sammen, put jeres hænder sammen for den næste DINK! {message.author.name} VILLAINERER %s!"+sponsor
+                                ,f"Åhh nej. %s er lige blevet VILLAINERET af {message.author.name}!!  Nu bliver du nødt til at DINK EN MERE, ellers vil du blive hjemsøgt af Villain i nat."+sponsor
+                                ]
+                
+                p_message_list = np.array([10]*len(message_list))
+                p_message_list[0] = 1
+                p_message_list[0] = 3
+                
+                dinker = message.author.id
+                N_dinked = len(message.mentions)
+                if N_dinked > 0:
+                    mentions_list = [s.id for s in message.mentions if s.id in IDs]
+                    mentions_name = [s.name for s in message.mentions if s.id in IDs]
+                    mentions_not_in = [s.id for s in message.mentions if s.id not in IDs]
+                    mentions_not_name = [s.name for s in message.mentions if s.id not in IDs]
+                    N_in = len(mentions_list)
+                    N_out = len(mentions_not_in)
+                    print(mentions_name,mentions_not_name)
+                else:
+                    N_in = 0
+                    N_out = 0
+                
+    
+                if N_in == 0: #if no people are mentioned, chose random from IDs list
+                    dinkee = Random(IDs,points)
+                else:         #If people were  tagged,  chose the ones that are  on the ID list
+                    dinkee = mentions_list
+                    
+                if len(dinkee) == 1:
+                    string = "<@%i>" % (dinkee[0])
+                else:
+                    names = ["<@%i>" % i for i in dinkee]
+                    string = list_creator(names)
+            
+            
+                Update(dinker,dinkee)
+                
+                
+                if message.author.id in IDs:
+                    i_ID = [i for i in range(len(IDs)) if IDs[i] == message.author.id][0]
+                    embed = discord.Embed(title=f'{message.author.name} just dinked!')
+                    embed.add_field(name='Counter',value='Dinks performed: \n Dinks recieved: \n Dink probability:')
+                    embed.add_field(name='Value',value=liner(['%i'%Totaldink[i_ID],'%i'%TotalHandouts[i_ID],'%.3g%%'%((100*prob_proportionality(points)[i_ID]))] ))
+                else:
+                    embed = discord.Embed()
+                embed.set_thumbnail(url='https://i.imgur.com/0yHN9n1.jpeg')
+                
+                if N_out >0: #Tell  the users that some people have not yet used the dink command
+                    if N_out == 1:
+                        non_dink = mentions_not_name[0]
+                    else:
+                        non_dink= list_creator(mentions_not_name)
+                    await message.channel.send(f'{message.author.mention} Some people have not yet dinked (%s) and can therefore not be dinked yet :( A random person was chosen instead'%non_dink)
+                print(points,np.mean(points))
+    
+                if   'bbskål'  in message.content.lower():
+                    message_paste = np.random.choice(message_list_dk,p=np.asarray(p_message_list)/np.sum(p_message_list))
+                elif 'bbprost' in message.content.lower():
+                    message_paste = np.random.choice(message_list_de,p=np.asarray(p_message_list)/np.sum(p_message_list))
+                else:
+                    message_paste = np.random.choice(message_list   ,p=np.asarray(p_message_list)/np.sum(p_message_list))
+                await message.channel.send(message_paste % string,embed=embed)
+
+    
+    
+            if "bbreset" in message.content.lower()[:7] and message.author.id in Trusted_IDs:
+                Reset()
+                print(points,np.mean(points))
+                embed2 = discord.Embed(title= 'LeCerial reset the tally 👀')
+                embed2.add_field(name='User', value=liner(["<@%i>" % i for i in IDs]))
+                embed2.add_field(name='Dinks used', value=liner(["%i" % i for i in Totaldink]))
+                embed2.add_field(name='Dinks recieved', value=liner(["%i" % i for i in TotalHandouts]))
+                embed2.set_thumbnail(url='https://media.giphy.com/media/Ws4Mtju5Sq1swakFzU/giphy.gif')
+                await message.channel.send('All tallys have been reset 😌',embed=embed2)
+                
+                
+            if "bbtally" in message.content.lower()[:7]:
+                if len(IDs) > 0:
+                    await Tally()
+                else:
+                    await message.channel.send('No players in the game')
+            
+            
+            
+            M6 = message.content.lower()[:6]
+            if "bbsink" in M6 or "bbeink" in M6 or "bbfink" in M6 or "bbxink" in M6:
+                await message.channel.send(f'{message.author.mention} mispelled bbdink, the drunk  bastard 👀')
+            if 'bbdrink' in message.content.lower()[:7]:
+                await message.channel.send(f'{message.author.mention} mispelled bbdink 👀.. SHAME! SHAME! SHAME!')
+                
+              
+                
+                
+                
+                
+                
+            if 'bbprobbig' in message.content.lower()[:len('bbprobbig')] or 'bbprob big' in message.content.lower()[:len('bbprob big')]:
+                if len(IDs)>0:
+                    def Pie(name='Pie.png'):
+                        plt.figure(figsize=(6,4),dpi=150)
+                        ax = plt.subplot(111)
+                        labels = Nicks
+                        ex = [0]*len(IDs)
+                        for i in ex:
+                            if i >= np.max(points):
+                                ex[i] = 0.1
+                        wedges, texts,autotext= ax.pie(points,explode=ex,labels=labels,autopct='%.1f%%',radius=1.2,textprops=dict(color="w"))
+                        plt.savefig(name,transparent=True)
+                    Pie()
+                    file = discord.File("Pie.png", filename="Probability.png")
+                    await message.reply('Probability to get selected at random',file=file)
+                else:
+                    await message.reply('No players in the game')
+            elif 'bbprob' in message.content.lower()[:6]:
+                if len(IDs)>0:
+                    await PROB()
+                else:
+                    await message.reply('No players in the game')
+            
+            
+            if 'bbtime' in message.content.lower()[:6] and message.author.id in Trusted_IDs:
+                try:
+                    if len(IDs)>0:
+                        message_list = [f'OH SHIT! %s just got randomly dinked by {client.user.name}!!'
+                                        ,f'{client.user.name} flipped a %i sided coin, and %s lost, time to DINK ONE MOAR!' % (len(IDs),'%s')
+                                        ,f"Is it raining cows today? {client.user.name} checked, and the answer was no.. %s has to dink one more!"
+                                        ,f"Our good bot {client.user.name} ran out of good ways to be random, so %s should dink ONE MOAR!!"
+                                        ,'Its fucking dinking time, so %s should dink one MOAR!'
+                                        ,f'{client.user.name}: We live to party, we drink to party, %s dink one MOAR!'
+                                        ,'Alcohol might not solve your problems, but neither will milk or water, %s DINK ONE MOAR!'
+                                        ]
+                        p_message_list = np.array([10]*len(message_list))
+                        p_message_list[0] = 1
+                        p_message_list[0] = 3
+                        string = message.content.lower()[7:]
+                        N = int(string[:string.find(',')])
+                        T = int(string[string.find(',')+1:])
+                        for i in range(N):
+                            await asyncio.sleep(np.random.randint(60)+T*60)
+                            dinkee = Random(IDs,points)
+                            Update(dinkee[0],dinkee,True)
+                            i_ID = [i for i in range(len(IDs)) if IDs[i] == dinkee[0]][0]
+                            embed = discord.Embed(title=r'%s just got randomly dinked!'%Nicks[i_ID])
+                            embed.add_field(name='Counter',value='Dinks performed: \n Dinks recieved: \n Dink probability:')
+                            embed.add_field(name='Value',value=liner(['%i'%Totaldink[i_ID],'%i'%TotalHandouts[i_ID],'%.3g%%'%(100*points[i_ID]/np.sum(points))] ))
+                            embed.set_thumbnail(url=Link_selector(drunk_gif_list))
+                            message_paste = np.random.choice(message_list,p=np.asarray(p_message_list)/np.sum(p_message_list))
+                            await message.channel.send(message_paste % ("<@%i>" % (dinkee[0])),embed=embed)
+                except:
+                    await message.channel.send('No players in the game')
+                    
+    
+            if 'opt in' == message.content.lower() or 'bbopt in' == message.content.lower():
+                if message.author.id not in IDs:
+                    IDs.append(message.author.id)
+                    points.append(5)
+                    Totaldink.append(0)
+                    TotalHandouts.append(0)
+                    await Tally(f'Welcome {message.author.mention}! Happy DINKING! <3')
+                else:
+                    await message.channel.send(f'{message.author.mention}, you are already in the game!')
+            if 'opt out' == message.content.lower() or 'bbopt out' == message.content.lower():
+                if message.author.id in IDs:
+                    Delete(message.author.id)
+                    if len(IDs)>0:
+                        print(points,np.mean(points))
+                    await message.channel.send(f'Sad to see you go {message.author.mention}! :(')
+                else:
+                    await message.channel.send(f'{message.author.mention}, you are not currently in the game!')
+            if 'opt out' in message.content.lower()[:7] and message.author.id in Trusted_IDs and len(message.mentions)>0:
+                in_list = []
+                out_list = []
+                for user in message.mentions:
+                    if user.id in IDs:
+                        in_list.append(user.id)
+                        Delete(user.id)
+                    else:
+                        out_list.append(user.id)
+                    
+                print(points,np.mean(points))
+                if len(in_list) == 1:
+                    string = "<@%i>" % (in_list[0])
+                else:
+                    names = ["<@%i>" % i for i in in_list]
+                    string = list_creator(names)
+            
+            
+            
+            
+            if 'bbvillain' == message.content.lower() and message.author.id in bbvillain_IDs:
+                TimeSetting = 30 #in minutes
+                if len(IDs) > 0:
+                    if len(IDs) > 0 and (time.time()-T0[-1]) > 60*TimeSetting and message.author.id in IDs:
+                        string = '**OH SHIT!** Villain spotted, **group dink**!!! \n' + list_creator( (["<@%i>" % i for i in IDs]) )
+                        T0.append(time.time())
+                        for i in range(len(IDs)):
+                            TotalHandouts[i] += 1
+                        await message.channel.send(string,file=discord.File('./images/dink.mp4'))
+                    elif len(IDs) > 0 and (time.time()-T0[-1]) <= 60*TimeSetting and message.author.id in IDs:
+                        cooldown = int(np.floor( TimeSetting - (time.time()-T0[-1])/60  ))
+                        await message.channel.send('Villain is not ready for another group dink, wait at least %i min'%cooldown)
+                    else:
+                        await message.channel.send(f'{message.author.mention} you are not allowed to summon the allmighty Villain without being in the game yourself')
+                else:
+                    await message.channel.send('No players in the game')
+            if 'bbvillain' == message.content.lower()[:9] and message.author.id in bbvillain_IDs:
+                if len(message.mentions)>0:
+                    mentions_list = [s.id for s in message.mentions if s.id not in bbvillain_IDs]
+                    for ID in mentions_list:
+                        bbvillain_IDs.append(ID)
+                    await message.reply('%i player%s %s added, they can now use bbvillain' % (len(mentions_list), 's' if len(mentions_list)>1 else '' , 'were' if len(mentions_list)>1 else 'was' ))
+        
+        
+        
+        
+        elif check_command() or 'opt in' == message.content.lower() or 'opt out' == message.content.lower():
+            if time.time()-T_dink[-1]>5*30:
+                T_dink.append(time.time())
+                await message.channel.send('Villain does not dink during weekdays \n'+'Come back in %i Hours (4pm Friday)'%(112-week_hour())
+                                           ,file = discord.File('./images/sadain.PNG')
+                                           )
+
+client.run(token)
+
+
+
+
+
+
+
+
