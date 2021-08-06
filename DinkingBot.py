@@ -11,8 +11,7 @@ import matplotlib.pyplot as plt
 nest_asyncio.apply()
 
 
-#https://github.com/whambulance/markov-bot
-token = open("token.txt", "r").read()
+
 
 def list_creator(names):
     N = len(names)
@@ -41,7 +40,7 @@ def Calculator(string):
     except:
         return 'Invalid syntax'
 
-# def current_stream(hour =int(time.strftime('%H')) ): #for raid parties
+# def current_stream(hour =int(time.strftime('%H',time.gmtime())) ): #for raid parties
 #     streams = ['therealgpf','thesweedrunner','elxrdj','cptn_jaxx','ditz33']
 #     times = [18,19,20,21,22]
 #     current_hour = hour
@@ -58,11 +57,13 @@ def week_hour():
     if day == -1:
         day = 6
     return day*24+hour_of_day+2
-def dink_time():
-    if week_hour() >= 4 and week_hour() <= (4*24+16):
+def dink_time(T0 = 4*24+16):
+    if week_hour() >= 4 and week_hour() <= T0:
         return False
     else:
         return True
+def time_till_dink(T0 = 4*24+16):
+    return T0 - week_hour()+1
 
 
 def live_on_twitch(channelName='therealgpf'):
@@ -307,18 +308,49 @@ def string_gen(commands,desc):
 
 Fun = True
 admin_dink_time_override = False
+Sponsor_message = True
+N_requirement = 3
+
 T0 = [0]
 T_dink = [0]
-T_hey = [0]
-T_hello = [0]
 Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
 bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
-
-#User specific time cooldown on hellocommand (6 hours)
-#Add markov to the bot
-
-
 Channels = list(np.loadtxt('Channels.txt',np.int64))
+
+
+
+#Add markov to the bot
+#auto removal after set amount of time (time tracker)
+
+
+timer_IDs = []
+timer_times = []
+def hey_timer(ID,cooldown = 6*60**2): #Check if user said Hi to Villin within cooldown time (cooldown in seconds)
+    if ID in timer_IDs:
+        i_ID = timer_IDs.index(ID)
+        if time.time() - timer_times[i_ID] >= cooldown:
+            timer_times[i_ID] = time.time()
+            return True
+        else:
+            return False
+    else:
+        timer_IDs.append(ID)
+        timer_times.append(time.time())
+        return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @client.event
 async def on_message(message):
@@ -329,13 +361,12 @@ async def on_message(message):
 
         
         if 'hello villain' == message.content.lower() or 'hey villain' == message.content.lower():
-            if time.time()-T_hey[-1] > 60:
-                T_hey.append(time.time())
+            if hey_timer(message.author.id):
                 await message.reply('Hey x, weekend warrior!')
         if 'hello' == message.content.lower():
-            if time.time()-T_hello[-1] > 60:
-                T_hello.append(time.time())
+            if hey_timer(message.author.id):
                 await message.reply('Hey weekend warrior!')
+
         
         if "!zoom" == message.content.lower():
             await message.channel.send('GPF: https://hot.greazy.co/zoom')
@@ -402,7 +433,7 @@ async def on_message(message):
         if 'calculate' in message.content.lower()[:9] and message.author.id in Trusted_IDs:
             await message.channel.send(Calculator(message.content[10:]))
         # if 'raidtrain' in message.content.lower():
-        #     await message.channel.send(current_stream(int(time.strftime('%H'))))
+        #     await message.channel.send(current_stream(int(time.strftime('%H',time.gmtime()))))
         #     if int(time.strftime('%H'))<18:
         #         await message.channel.send('Planned schedule:')
         #         await message.channel.send('https://cdn.discordapp.com/attachments/865152397192855572/868789061198966804/Semen.png')
@@ -417,7 +448,7 @@ async def on_message(message):
             os.execv(sys.executable, ['python'] + sys.argv)
 
         
-        N_requirement = 3
+        
         message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
         async for msg in message.channel.history(limit=7+N_requirement):
             all_message_history.append(msg.content)
@@ -445,7 +476,7 @@ async def on_message(message):
                               +'received. Probability to be selected at random is based on the square of normalized points, dinking '
                               +'someone will give you their point. Every player starts with 5 points, hence the 5 drink max by random '
                               +'selection. The game is set up to dink the people who dink the most. \n'
-                              + ["Dinking is active in %i hours" % (112-week_hour()) if not dink_time() else 'Dinking is active RIGHT NOW!'][0]
+                              + ["Dinking is active in %i hours" % (time_till_dink()) if not dink_time() else 'Dinking is active RIGHT NOW!'][0]
                               ][0] )
             await message.reply(embed=embed)
             
@@ -479,7 +510,7 @@ async def on_message(message):
                 await message.channel.send('Dinking now enabled')
             elif admin_dink_time_override:
                 admin_dink_time_override = False
-                await message.channel.send('Dinking now back to normal schedule. %i Hours left'%(112-week_hour()))
+                await message.channel.send('Dinking now back to normal schedule. %i Hours left.'%(time_till_dink()))
         
         Nicks = []
         for ID in IDs:
@@ -510,10 +541,10 @@ async def on_message(message):
     
             
     
-            if "bbdink" in message.content.lower()[:6] or "bbprost" in message.content.lower()[:7] or "bbskål" in message.content.lower()[:6]:
+            if "bbdink" in message.content.lower()[:6] or "bbprost" in message.content.lower()[:7] or "bbskål" in message.content.lower()[:6] or "bbcheers" in message.content.lower()[:8]:
                 if len(IDs)<1:
                     FirstPlayer(message.author.id)
-                sponsor = " (message sponsored by juizzx)"
+                sponsor = " (message sponsored by juizzx)" if Sponsor_message else ''
                 message_list = [f'Welp..! {message.author.name} wants %s to DINK ONE! Take one for the team and down your entire glass!'+sponsor
                                 ,f'Raise your hands, Weekend Warrior! And make sure there is a shot in it, cause {message.author.name} wants %s to DINK ONE MOAR!'+sponsor
                                 ,f"I'm an Alcoholic 'til the day that I die! And so is %s, {message.author.name} chose you to DINK ONE MOAR now!"+sponsor
@@ -525,7 +556,7 @@ async def on_message(message):
                                 ,f"Oh shit no. %s just got VILLAINED by {message.author.name}!!  Now YOU HAVE TO DINK ONE MOAR, otherwise you will be haunted by Villain tonight."+sponsor
                                 ]
                 
-                sponsor =  " (Nachricht gesponsert von juizzx)"
+                sponsor =  " (Nachricht gesponsert von juizzx)" if Sponsor_message else ''
                 message_list_de = [f'Nun..! {message.author.name} will, dass %s EINEN DINKT! Nimm einen für’s ganze Team und DINK dein ganzes Glas!'+sponsor
                                 ,f'Hoch die Hände, Weekend Warrior! Und stell‘ sicher, dass sich ein Shot darin befindet, denn {message.author.name} will, dass %s NOCH EINEN DINKT!'+sponsor
                                 ,f"Ich bin Alkoholiker bis zu dem Tag, an dem ich sterbe! Und so ist auch %s, {message.author.name} hat dich ausgewählt um jetzt EINEN ZU DINKEN!"+sponsor
@@ -537,7 +568,7 @@ async def on_message(message):
                                 ,f"Oh scheiße. %s wurde gerade von {message.author.name} GEVILLAINED!!  DINK noch einen, sonst wird Villain dich heute Nacht heimsuchen."+sponsor
                                 ]
                 
-                sponsor = " (Denne meddelse er sponsoreret af juizzx)"
+                sponsor = " (Denne meddelse er sponsoreret af juizzx)" if Sponsor_message else ''
                 message_list_dk = [f'Åhh nej! {message.author.name} vil have %s til at DINK EN! Tag en for holdet og drik hele dit glas!'+sponsor
                                 ,f'Ræk dine hænder op, Weekend Kriger! Og sikrer dig at der er et shot i dem, fordi {message.author.name} vil have at %s skal DINK EN MERE!'+sponsor
                                 ,f"Jeg er en alkoholiker til den dag jeg DØR! Og det er %s også! {message.author.name} har valgt dig til at DINK EN MERE!"+sponsor
@@ -551,7 +582,7 @@ async def on_message(message):
                 
                 p_message_list = np.array([10]*len(message_list))
                 p_message_list[0] = 1
-                p_message_list[0] = 3
+                p_message_list[1] = 3
                 
                 dinker = message.author.id
                 N_dinked = len(message.mentions)
@@ -606,7 +637,10 @@ async def on_message(message):
                     message_paste = np.random.choice(message_list_de,p=np.asarray(p_message_list)/np.sum(p_message_list))
                 else:
                     message_paste = np.random.choice(message_list   ,p=np.asarray(p_message_list)/np.sum(p_message_list))
-                await message.channel.send(message_paste % string,embed=embed)
+                if 'small' not in message.content.lower():
+                    await message.channel.send(message_paste % string,embed=embed)
+                else:
+                    await message.channel.send(message_paste % string)
 
     
     
@@ -763,10 +797,13 @@ async def on_message(message):
         elif check_command() or 'opt in' == message.content.lower() or 'opt out' == message.content.lower():
             if time.time()-T_dink[-1]>5*30:
                 T_dink.append(time.time())
-                await message.channel.send('Villain does not dink during weekdays \n'+'Come back in %i Hours (4pm Friday)'%(112-week_hour())
+                await message.channel.send('Villain does not dink during weekdays \n'+'Come back in %i Hours (4pm Friday)'%(time_till_dink())
                                            ,file = discord.File('./images/sadain.PNG')
                                            )
 
+
+
+token = open("token.txt", "r").read()
 client.run(token)
 
 
