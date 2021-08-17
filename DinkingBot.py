@@ -188,6 +188,14 @@ Mandy_vids = ['Oh you want MANDY? Here is a Mandy set with fucking VILLAIN as MC
               ,'https://youtu.be/Y6ddPorsZy8 There you go.. Unfortunately.'
               ,'We are all online, so why not cry using this online set with Mandy https://youtu.be/IfQYM1Ugbek'
               ]
+Neckbeard_gifs = ['https://c.tenor.com/CdRnkNKsx9wAAAAM/epic-hat.gif'
+                  ,'https://cdn.discordapp.com/attachments/778287703300505650/861352301566623754/image0.gif'
+                  ,'https://c.tenor.com/FDdqrAlNNg0AAAAM/louis-neckbeard.gif'
+                  ,'https://c.tenor.com/pjW1WjTke7YAAAAj/neckbeard-fat.gif'
+                  ,'https://i.redd.it/bjwcretcwfb11.gif'
+                  ,'https://c.tenor.com/1eYfGYelSRkAAAAM/tiktok-mouth.gif'
+                  ,'<:pablo:861353940481998898>'
+                  ]
 
 
 
@@ -323,22 +331,25 @@ Channels = list(np.loadtxt('Channels.txt',np.int64))
 #auto removal after set amount of time (time tracker)
 
 
-timer_IDs = []
-timer_times = []
-def hey_timer(ID,cooldown = 6*60**2): #Check if user said Hi to Villin within cooldown time (cooldown in seconds)
-    if ID in timer_IDs:
-        i_ID = timer_IDs.index(ID)
-        if time.time() - timer_times[i_ID] >= cooldown:
-            timer_times[i_ID] = time.time()
+
+
+timer_IDs = {}
+timer_times = {}
+def countdown_timer(ID,counter='hey',cooldown = 6*60**2): #Check if user said Hi to Villin within cooldown time (cooldown in seconds)
+    if counter not in timer_IDs:
+        timer_IDs[counter] = []
+        timer_times[counter] = []
+    if ID in timer_IDs[counter]:
+        i_ID = timer_IDs[counter].index(ID)
+        if time.time() - timer_times[counter][i_ID] >= cooldown:
+            timer_times[counter][i_ID] = time.time()
             return True
         else:
             return False
     else:
-        timer_IDs.append(ID)
-        timer_times.append(time.time())
+        timer_IDs[counter].append(ID)
+        timer_times[counter].append(time.time())
         return True
-
-
 
 
 
@@ -361,11 +372,16 @@ async def on_message(message):
 
         
         if 'hello villain' == message.content.lower() or 'hey villain' == message.content.lower():
-            if hey_timer(message.author.id):
+            if countdown_timer(message.author.id,'hey'):
                 await message.reply('Hey x, weekend warrior!')
         if 'hello' == message.content.lower():
-            if hey_timer(message.author.id):
+            if countdown_timer(message.author.id,'hey'):
                 await message.reply('Hey weekend warrior!')
+        if 'hello boys' == message.content.lower() or 'hello boys.' == message.content.lower():
+            if countdown_timer(message.author.id,'pablo',cooldown=30*60):
+                await message.reply(Link_selector(Neckbeard_gifs))
+        if 'bye villain' == message.content.lower() and countdown_timer(message.author.id,'leaving'):
+            await message.reply('There is no leaving')
 
         
         if "!zoom" == message.content.lower():
