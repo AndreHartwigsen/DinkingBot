@@ -196,6 +196,9 @@ Neckbeard_gifs = ['https://c.tenor.com/CdRnkNKsx9wAAAAM/epic-hat.gif'
                   ,'https://c.tenor.com/1eYfGYelSRkAAAAM/tiktok-mouth.gif'
                   ,'<:pablo:861353940481998898>'
                   ]
+crywank_gifs = ['https://i.imgur.com/y4ROWoJ.mp4'
+                ,'https://cdn.discordapp.com/attachments/730787222445490252/878340666718044170/SmartSelect_20210820-201119_YouTube.gif'
+                ]
 
 
 
@@ -366,8 +369,7 @@ def countdown_timer(ID,counter='hey',cooldown = 6*60**2): #Check if user said Hi
 @client.event
 async def on_message(message):
     if message.author != client.user and message.channel.id in Channels:
-        global Fun
-        global admin_dink_time_override
+        global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message
         print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
 
         
@@ -381,7 +383,10 @@ async def on_message(message):
             if countdown_timer(message.author.id,'pablo',cooldown=30*60):
                 await message.reply(Link_selector(Neckbeard_gifs))
         if 'bye villain' == message.content.lower() and countdown_timer(message.author.id,'leaving'):
-            await message.reply('There is no leaving')
+            await message.reply('There is no leaving (apart from opting out)')
+        if 'crywank' == message.content.lower():
+            if countdown_timer(message.author.id,'crywank',cooldown=60):
+                await message.reply(Link_selector(crywank_gifs))
 
         
         if "!zoom" == message.content.lower():
@@ -443,7 +448,14 @@ async def on_message(message):
                 await message.channel.send(file=discord.File('./images/shitpost/%s' % Link_selector([s for s in os.listdir("./images/shitpost/") if '.ini' not in s])) )
         
             
-            
+        if 'trust' == message.content.lower()[:5] and message.author.id in Trusted_IDs:
+            if len(message.mentions)>0:
+                mentions = [s.id for s in message.mentions if s.id in IDs]
+                for ID in mentions:
+                    Trusted_IDs.append(ID)
+            #print(mentions,Trusted_IDs)
+        
+        
         
             
         if 'calculate' in message.content.lower()[:9] and message.author.id in Trusted_IDs:
@@ -555,7 +567,12 @@ async def on_message(message):
                     await message.reply(Message,embed=embed2)
     
     
-            
+            if 'bbsponsor' == message.content.lower() and message.author.id in Trusted_IDs:
+                if Sponsor_message:
+                    Sponsor_message = False
+                else:
+                    Sponsor_message = True
+                
     
             if "bbdink" in message.content.lower()[:6] or "bbprost" in message.content.lower()[:7] or "bbskål" in message.content.lower()[:6] or "bbcheers" in message.content.lower()[:8]:
                 if len(IDs)<1:
