@@ -65,7 +65,6 @@ def dink_time(T0 = 4*24+16):
 def time_till_dink(T0 = 4*24+16):
     return T0 - week_hour()+1
 
-
 def live_on_twitch(channelName='therealgpf'):
     contents = requests.get('https://www.twitch.tv/' + channelName).content.decode('utf-8')
     if 'isLiveBroadcast' in contents: 
@@ -81,6 +80,27 @@ IDs = list(file['ID'])
 points = list(file['points'])
 Totaldink = list(file['dinks'])
 TotalHandouts = list(file['Handouts'])
+
+
+def ID_Tracker(ID,opt): 
+    #0: dink
+    #1: Got dinked
+    #2: Random Handout
+    stored_IDs = [int(s[:-4]) for s in os.listdir('./UserTracker/') if '.csv' in s]
+    if ID in stored_IDs:
+        file = pd.read_csv('./UserTracker/%i.csv'%ID)
+        Time = list(file['Time'])
+        value = list(file['value'])
+        Time.append(time.time())
+        value.append(opt)
+    else:
+        Time = [time.time()]
+        value = [opt]
+    df = pd.DataFrame({'Time':Time , 'value':value})
+    df.to_csv('./UserTracker/%i.csv'%ID,index=False)
+
+
+
 
 
 def Delete(User_ID):
@@ -147,7 +167,6 @@ def Update(caller,dinkees,Handout=False): #dinkees must be a list
         Totaldink.append(1)
         TotalHandouts.append(0)
     
-    
     for i,ID in enumerate(dinkees):
         if ID in IDs and not Handout:
             i_dinked = [i for i,iD in enumerate(IDs) if iD == ID][0]
@@ -160,6 +179,7 @@ def Update(caller,dinkees,Handout=False): #dinkees must be a list
                 
     df = pd.DataFrame({'ID':IDs , 'points':points , 'dinks':Totaldink , 'Handouts':TotalHandouts})
     df.to_csv('Dinking.csv',index=False)
+
 def Reset():
     for i in range(len(IDs)):
         points[i] = 5
@@ -181,6 +201,7 @@ drunk_gif_list = ['https://i.makeagif.com/media/9-21-2015/mbewqE.gif'
                   ,'https://media.giphy.com/media/NCZQhdPbCNmwM/giphy.gif'
                   ,'https://media.giphy.com/media/Jrk7tpcTZtwcg/giphy.gif'
                   ,'https://media.giphy.com/media/NPAB0vUr8nfR6/giphy.gif'
+                  ,'https://tenor.com/view/mimosa-drinking-cocktails-i-just-had-one-drink-alcoholic-gif-15802079'
                   ]
 Mandy_vids = ['Oh you want MANDY? Here is a Mandy set with fucking VILLAIN as MC:  https://youtu.be/WJtVm25iP80'
               ,"I hope you're ready for some shitty mixing.... https://youtu.be/PPkFMtrinZU"
@@ -222,7 +243,25 @@ def liner(string):
     for i in range(len(string)-1):
         out += sep + string[i+1]
     return out
-
+def wave(string,amplitude = 100):
+    List = []
+    space = []
+    Nz = 0
+    for i in range(200):
+        space.append(np.floor(amplitude * np.sin(i/5)**2 * np.exp(-i/20) ).astype(int))
+        if space[-1] == 0:
+            Nz += 1
+            if Nz>4: break
+        else:
+            Nz = 0
+    for i in range(len(space)):
+        List.append(  ' '* space[i]  + string + "\n"  )
+    total = ''.join(List)
+    if len(total) > 2000:
+        total = total[:2000]
+        end = total[::-1].index('\n')+1
+        total = total[:-end]
+    return total
 
 
 import discord
@@ -243,19 +282,23 @@ async def on_ready():
 
 
 #-----------------------------------------------------------------------
-spam_commands = ["bbcum/cum"
+spam_commands = ["wave [content]"
+                 ,"bbcum/cum"
                  ,"cope/seethe"
                  ,"bbfriend"
                  ,"bbcyka/bbblyat"
                  ,"bbMandy"
                  ,"bbshitpost"
+                 ,'crywank'
                  ]
-spam_desc     = ["Random cum related stuff."
+spam_desc     = ["Create an exponentially decaying squared sinusoidal wave of [content]. (Only works with GPF and default emojis and any message)"
+                 ,"Random cum related stuff."
                  ,"Random cope/seethe related stuff."
                  ,"Random wholesome related stuff."
                  ,"Random russia related stuff."
                  ,"Random Mandy related stuff."
                  ,"We believe you get it by now"
+                 ,'Crywank?..'
                  ]
 #-----------------------------------------------------------------------
 utility_commands = ["Hello"
@@ -319,18 +362,18 @@ def string_gen(commands,desc):
 
 Fun = True
 admin_dink_time_override = False
-Sponsor_message = True
+Sponsor_message = False
 N_requirement = 3
 
 T0 = [0]
 T_dink = [0]
-Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
+Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64)) ; Temp_Trusted = []
 bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
 Channels = list(np.loadtxt('Channels.txt',np.int64))
 
 
 
-#Add markov to the bot
+
 #auto removal after set amount of time (time tracker)
 
 
@@ -353,7 +396,10 @@ def countdown_timer(ID,counter='hey',cooldown = 6*60**2): #Check if user said Hi
         timer_IDs[counter].append(ID)
         timer_times[counter].append(time.time())
         return True
-
+def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
+    i_ID = timer_IDs[counter].index(ID)
+    time_left = time.time() - timer_times[counter][i_ID]
+    return int(np.ceil(  (cooldown - time_left)  /60))
 
 
 
@@ -369,7 +415,7 @@ def countdown_timer(ID,counter='hey',cooldown = 6*60**2): #Check if user said Hi
 @client.event
 async def on_message(message):
     if message.author != client.user and message.channel.id in Channels:
-        global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message
+        global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted
         print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
 
         
@@ -386,7 +432,7 @@ async def on_message(message):
             await message.reply('There is no leaving (apart from opting out)')
         if 'crywank' == message.content.lower():
             if countdown_timer(message.author.id,'crywank',cooldown=60):
-                await message.reply(Link_selector(crywank_gifs))
+                await message.channel.send(Link_selector(crywank_gifs))
 
         
         if "!zoom" == message.content.lower():
@@ -446,20 +492,30 @@ async def on_message(message):
                 await message.channel.send(file=discord.File('./images/cum/%s' % Link_selector([s for s in os.listdir("./images/cum/") if '.ini' not in s])) )        
             if 'bbshitpost' in message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl'== message.content.lower():
                 await message.channel.send(file=discord.File('./images/shitpost/%s' % Link_selector([s for s in os.listdir("./images/shitpost/") if '.ini' not in s])) )
-        
+            
+            
+            if 'wave' in message.content.lower()[:4]:
+                T_wave_cooldown = 30*60
+                if countdown_timer(message.author.id,'emoji',T_wave_cooldown) or (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted):
+                    emoji = message.content[5:]
+                    await message.channel.send( wave(emoji) )
+                else:
+                    t_left = countdown_timer_left(message.author.id,'emoji',T_wave_cooldown)
+                    await message.reply('This command has a %i minute cooldown per user. (%i min left)' % (T_wave_cooldown/60,t_left) )
+            
             
         if 'trust' == message.content.lower()[:5] and message.author.id in Trusted_IDs:
             if len(message.mentions)>0:
-                mentions = [s.id for s in message.mentions if s.id in IDs]
+                mentions = [s.id for s in message.mentions if (s.id not in Trusted_IDs)]
                 for ID in mentions:
-                    Trusted_IDs.append(ID)
-            #print(mentions,Trusted_IDs)
+                    Temp_Trusted.append(ID)
         
         
         
             
-        if 'calculate' in message.content.lower()[:9] and message.author.id in Trusted_IDs:
+        if 'calculate' in message.content.lower()[:9] and (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted):
             await message.channel.send(Calculator(message.content[10:]))
+        
         # if 'raidtrain' in message.content.lower():
         #     await message.channel.send(current_stream(int(time.strftime('%H',time.gmtime()))))
         #     if int(time.strftime('%H'))<18:
@@ -548,15 +604,18 @@ async def on_message(message):
             
             
             async def Tally(Message=None):
-                embed2 = discord.Embed(title= 'Dinking Tally')
-                embed2.add_field(name='User', value=liner(["<@%i>" % i for i in IDs]))
-                embed2.add_field(name='Dinks used', value=liner(["%i" % i for i in Totaldink]))
-                embed2.add_field(name='Dinks recieved', value=liner(["%i" % i for i in TotalHandouts]))
-                embed2.set_thumbnail(url=Link_selector(drunk_gif_list))
-                if Message == None:
-                    await message.reply(embed=embed2)
+                if len(IDs) > 0:
+                    embed2 = discord.Embed(title= 'Dinking Tally')
+                    embed2.add_field(name='User', value=liner(["<@%i>" % i for i in IDs]))
+                    embed2.add_field(name='Dinks used', value=liner(["%i" % i for i in Totaldink]))
+                    embed2.add_field(name='Dinks recieved', value=liner(["%i" % i for i in TotalHandouts]))
+                    embed2.set_thumbnail(url=Link_selector(drunk_gif_list))
+                    if Message == None:
+                        await message.reply(embed=embed2)
+                    else:
+                        await message.channel.send(Message,embed=embed2)
                 else:
-                    await message.channel.send(Message,embed=embed2)
+                    await message.channel.send('No players in the game')
             async def PROB(Message=None):
                 embed2 = discord.Embed(title= 'Dinking Probability')
                 embed2.add_field(name='User', value=liner(["<@%i>" % i for i in IDs]))
@@ -647,6 +706,14 @@ async def on_message(message):
                 Update(dinker,dinkee)
                 
                 
+                
+                ID_Tracker(dinker, 0)
+                for i in dinkee:
+                    ID_Tracker(dinkee, 1)
+                
+                
+                
+                
                 if message.author.id in IDs:
                     i_ID = [i for i in range(len(IDs)) if IDs[i] == message.author.id][0]
                     embed = discord.Embed(title=f'{message.author.name} just dinked!')
@@ -689,10 +756,7 @@ async def on_message(message):
                 
                 
             if "bbtally" in message.content.lower()[:7]:
-                if len(IDs) > 0:
-                    await Tally()
-                else:
-                    await message.channel.send('No players in the game')
+                Tally()
             
             
             
@@ -732,7 +796,7 @@ async def on_message(message):
                     await message.reply('No players in the game')
             
             
-            if 'bbtime' in message.content.lower()[:6] and message.author.id in Trusted_IDs:
+            if 'bbtime' in message.content.lower()[:6] and (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted):
                 try:
                     if len(IDs)>0:
                         message_list = [f'OH SHIT! %s just got randomly dinked by {client.user.name}!!'
@@ -753,6 +817,7 @@ async def on_message(message):
                             await asyncio.sleep(np.random.randint(60)+T*60)
                             dinkee = Random(IDs,points)
                             Update(dinkee[0],dinkee,True)
+                            ID_Tracker(dinkee, 2)
                             i_ID = [i for i in range(len(IDs)) if IDs[i] == dinkee[0]][0]
                             embed = discord.Embed(title=r'%s just got randomly dinked!'%Nicks[i_ID])
                             embed.add_field(name='Counter',value='Dinks performed: \n Dinks recieved: \n Dink probability:')
@@ -782,14 +847,10 @@ async def on_message(message):
                 else:
                     await message.channel.send(f'{message.author.mention}, you are not currently in the game!')
             if 'opt out' in message.content.lower()[:7] and message.author.id in Trusted_IDs and len(message.mentions)>0:
-                in_list = []
-                out_list = []
-                for user in message.mentions:
-                    if user.id in IDs:
-                        in_list.append(user.id)
-                        Delete(user.id)
-                    else:
-                        out_list.append(user.id)
+                in_list = [s.id for s in message.mentions if s.id in IDs]
+                #out_list = [s.id for s in message.mentions if s.id not in IDs]
+                for ID in in_list:
+                    Delete(ID)
                     
                 print(points,np.mean(points))
                 if len(in_list) == 1:
@@ -797,11 +858,31 @@ async def on_message(message):
                 else:
                     names = ["<@%i>" % i for i in in_list]
                     string = list_creator(names)
+                    
+                await Tally('Sad to see %s go, come back soon x. 😔'% string )
+
+            if 'opt in' == message.content.lower()[:6] and message.author.id in Trusted_IDs and len(message.mentions)>0:
+                mentions_list = [s.id for s in message.mentions if s.id not in IDs]
+                new_names = []
+                for i,Id in enumerate(mentions_list):
+                    IDs.append(Id)
+                    points.append(5)
+                    Totaldink.append(0)
+                    TotalHandouts.append(0)
+                    username = await client.fetch_user(Id)
+                    new_names.append(str(username)[:-5])
+                    
+                if len(mentions_list) == 1:
+                    string = new_names[0]
+                else:
+                    names = new_names
+                    string = list_creator(names)
+                await Tally('Everyone welcome %s to the game! Happy dinking x'%string)
             
             
             
             
-            if 'bbvillain' == message.content.lower() and message.author.id in bbvillain_IDs:
+            if 'bbvillain' == message.content.lower() and (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted):
                 TimeSetting = 30 #in minutes
                 if len(IDs) > 0:
                     if len(IDs) > 0 and (time.time()-T0[-1]) > 60*TimeSetting and message.author.id in IDs:
@@ -809,6 +890,7 @@ async def on_message(message):
                         T0.append(time.time())
                         for i in range(len(IDs)):
                             TotalHandouts[i] += 1
+                            ID_Tracker(IDs[i], 2)
                         await message.channel.send(string,file=discord.File('./images/dink.mp4'))
                     elif len(IDs) > 0 and (time.time()-T0[-1]) <= 60*TimeSetting and message.author.id in IDs:
                         cooldown = int(np.floor( TimeSetting - (time.time()-T0[-1])/60  ))
