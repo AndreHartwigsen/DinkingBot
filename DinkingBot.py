@@ -227,7 +227,7 @@ import random
 def rotate(l, n):
     return l[n:] + l[:n]
 orders = [[0]]*2
-for i in range(48):
+for i in range(98):
     orders.append(list(np.arange(i+2)))
     random.shuffle(orders[i+2])
 
@@ -243,7 +243,7 @@ def liner(string):
     for i in range(len(string)-1):
         out += sep + string[i+1]
     return out
-def wave(string,amplitude = 100):
+def wave(string,amplitude = 100,Nstop= 5):
     List = []
     space = []
     Nz = 0
@@ -251,7 +251,9 @@ def wave(string,amplitude = 100):
         space.append(np.floor(amplitude * np.sin(i/5)**2 * np.exp(-i/20) ).astype(int))
         if space[-1] == 0:
             Nz += 1
-            if Nz>4: break
+            if Nz>Nstop-1:
+                space = space[:-Nstop+1]
+                break
         else:
             Nz = 0
     for i in range(len(space)):
@@ -320,6 +322,7 @@ dinking_commands = [ "bbdink"
                     ,"bbdink [user]"
                     ,"opt in"
                     ,"opt out"
+                    ,'Coinflip'
                     ,"bbtally"
                     ,"bbprob"
                     ]
@@ -327,6 +330,7 @@ dinking_desc = ["Dinks a random user (ALTs: bbskål & bbprost)."
                 ,"Dinks a specific user or users. (supports ALTs)"
                 ,"Join the dinking game."
                 ,"Leave the dinking game."
+                ,"Dink if you guess the wrong outcome of coinflip"
                 ,"Tally for players in the game."
                 ,"probability to get selected at random"
                 ]
@@ -552,8 +556,8 @@ async def on_message(message):
             embed = discord.Embed(title=f'List of {client.user.name}™️ commands:',colour=discord.Colour.orange())
             embed.set_author(name=client.user.name, icon_url=client.user.avatar_url)
             embed.add_field(name='Dinking Related (Fri 4pm - Mon 4am CET):',    value=''.join(string_gen(dinking_commands,dinking_desc)),inline=False)
-            embed.add_field(name='Utility commands:',                       value=''.join(string_gen(utility_commands,utility_desc)),inline=False)
-            embed.add_field(name='Spam related:',                           value=''.join(string_gen(spam_commands,spam_desc)),inline=False)
+            embed.add_field(name='Utility commands:',                           value=''.join(string_gen(utility_commands,utility_desc)),inline=False)
+            embed.add_field(name='Spam related:',                               value=''.join(string_gen(spam_commands,spam_desc)),inline=False)
             embed.set_footer(text=[f'{client.user.name}™️ takes no responsibility for any following or imminent alcoholism caused by dinking. \n'
                               +'Apart from random handouts given by the bot, and people dinking other people specifically '
                               +'(prevention of this is WIP), a maximum of 5 dinks more than the amount of dinks handed out can be '
@@ -579,7 +583,7 @@ async def on_message(message):
 
 #------------------------------------- DINKING RELATED STUFF-----------------------------------------#
 
-        bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain']
+        bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
         def check_command(msg=message.content.lower()):
             for s in bc:
                 if s in msg[:len(s)]:
@@ -756,7 +760,7 @@ async def on_message(message):
                 
                 
             if "bbtally" in message.content.lower()[:7]:
-                Tally()
+                await Tally()
             
             
             
@@ -906,7 +910,45 @@ async def on_message(message):
                         bbvillain_IDs.append(ID)
                     await message.reply('%i player%s %s added, they can now use bbvillain' % (len(mentions_list), 's' if len(mentions_list)>1 else '' , 'were' if len(mentions_list)>1 else 'was' ))
         
-        
+            if 'coinflip' == message.content.lower():
+                T_coin_cooldown = 5*60
+                if message.author.id in IDs:
+                    if countdown_timer(message.author.id,'coinflip',cooldown=T_coin_cooldown):
+                        msg = await message.reply('I flipped a coin, guess correctly and recieve nothing, guess wrong and dink')
+                        valid_reactions = ['🍸','🍺']#['👍','👎']
+                        for s in valid_reactions:
+                            await msg.add_reaction(s)
+
+                        def check(reaction, user):
+                            return user == message.author and str(reaction.emoji) in valid_reactions
+                        try:
+                            reaction, user = await client.wait_for('reaction_add', timeout=10.0, check=check)
+                            if str(reaction.emoji) in valid_reactions:
+                                if str(reaction.emoji) == np.random.choice(valid_reactions):
+                                    await message.reply('You Guessed right! No dinking for now')
+                                else:
+                                    await message.reply('Wrong')
+                                    dinkee = Random(IDs,points)
+                                    Update(dinkee[0],dinkee,True)
+                                    ID_Tracker(dinkee, 2)
+                                    i_ID = [i for i in range(len(IDs)) if IDs[i] == dinkee[0]][0]
+                                    embed = discord.Embed(title=r"%s's looser stats"%Nicks[i_ID])
+                                    embed.add_field(name='Counter',value='Dinks performed: \n Dinks recieved: \n Dink probability:')
+                                    embed.add_field(name='Value',value=liner(['%i'%Totaldink[i_ID],'%i'%TotalHandouts[i_ID],'%.3g%%'%(100*points[i_ID]/np.sum(points))] ))
+                                    embed.set_thumbnail(url=Link_selector(drunk_gif_list))
+                                    await message.channel.send(f'{message.author.mention} just dinked themselves bu guessing wrong!! DINK MOAR',embed=embed)
+                                await msg.delete()
+                                    
+                        except:
+                            await msg.delete()
+                            await message.reply('You did not react in time')
+                    else:
+                        t_left = countdown_timer_left(message.author.id,'coinflip',T_coin_cooldown)
+                        await message.reply('This command has a %i minute cooldown per user. (%i min left)' % (T_coin_cooldown/60,t_left) )
+                else:
+                    await message.reply('You have to be in the game to flip coins')
+                
+                        
         
         
         elif check_command() or 'opt in' == message.content.lower() or 'opt out' == message.content.lower():
