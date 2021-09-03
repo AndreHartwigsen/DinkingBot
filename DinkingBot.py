@@ -832,6 +832,7 @@ async def on_message(message):
                 except:
                     await message.channel.send('No players in the game')
                     
+                    
     
             if 'opt in' == message.content.lower() or 'bbopt in' == message.content.lower():
                 if message.author.id not in IDs:
@@ -928,7 +929,7 @@ async def on_message(message):
                                     await message.reply('You Guessed right! No dinking for now')
                                 else:
                                     await message.reply('Wrong')
-                                    dinkee = Random(IDs,points)
+                                    dinkee = [message.author.id]
                                     Update(dinkee[0],dinkee,True)
                                     ID_Tracker(dinkee[0], 2)
                                     i_ID = [i for i in range(len(IDs)) if IDs[i] == dinkee[0]][0]
