@@ -930,7 +930,7 @@ async def on_message(message):
                                     await message.reply('Wrong')
                                     dinkee = Random(IDs,points)
                                     Update(dinkee[0],dinkee,True)
-                                    ID_Tracker(dinkee, 2)
+                                    ID_Tracker(dinkee[0], 2)
                                     i_ID = [i for i in range(len(IDs)) if IDs[i] == dinkee[0]][0]
                                     embed = discord.Embed(title=r"%s's looser stats"%Nicks[i_ID])
                                     embed.add_field(name='Counter',value='Dinks performed: \n Dinks recieved: \n Dink probability:')
