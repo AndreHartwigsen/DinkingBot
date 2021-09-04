@@ -374,6 +374,7 @@ T_dink = [0]
 Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64)) ; Temp_Trusted = []
 bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
 Channels = list(np.loadtxt('Channels.txt',np.int64))
+blacklist = []
 
 
 
@@ -418,7 +419,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 @client.event
 async def on_message(message):
-    if message.author != client.user and message.channel.id in Channels:
+    if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
         global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted
         print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
 
@@ -468,7 +469,10 @@ async def on_message(message):
         
             
             
-        
+        if 'blacklist' == message.content.lower()[:9] and message.author.id in Trusted_IDs:
+            blacklist.append(int(message.content.lower()[10:]))
+            print(blacklist)
+            await message.reply('User added to blacklist')
         
         
         if 'bbspam' in message.content.lower()[:6] and message.author.id in Trusted_IDs:
@@ -926,7 +930,7 @@ async def on_message(message):
                             reaction, user = await client.wait_for('reaction_add', timeout=10.0, check=check)
                             if str(reaction.emoji) in valid_reactions:
                                 if str(reaction.emoji) == np.random.choice(valid_reactions):
-                                    await message.reply('You Guessed right! No dinking for now')
+                                    await message.reply('You guessed right! No dinking for now')
                                 else:
                                     await message.reply('Wrong')
                                     dinkee = [message.author.id]
@@ -937,7 +941,7 @@ async def on_message(message):
                                     embed.add_field(name='Counter',value='Dinks performed: \n Dinks recieved: \n Dink probability:')
                                     embed.add_field(name='Value',value=liner(['%i'%Totaldink[i_ID],'%i'%TotalHandouts[i_ID],'%.3g%%'%(100*points[i_ID]/np.sum(points))] ))
                                     embed.set_thumbnail(url=Link_selector(drunk_gif_list))
-                                    await message.channel.send(f'{message.author.mention} just dinked themselves bu guessing wrong!! DINK MOAR',embed=embed)
+                                    await message.channel.send(f'{message.author.mention} just dinked themselves by guessing wrong!! DINK MOAR',embed=embed)
                                 await msg.delete()
                                     
                         except:
