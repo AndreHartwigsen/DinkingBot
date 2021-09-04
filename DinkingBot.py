@@ -720,7 +720,7 @@ async def on_message(message):
                 
                 ID_Tracker(dinker, 0)
                 for i in dinkee:
-                    ID_Tracker(dinkee, 1)
+                    ID_Tracker(i, 1)
                 
                 
                 
