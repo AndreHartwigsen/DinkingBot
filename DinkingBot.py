@@ -894,7 +894,7 @@ async def on_message(message):
             
             
             
-            if 'bbvillain' == message.content.lower() and (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted):
+            if 'bbvillain' == message.content.lower() and (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted or message.author.id in bbvillain_IDs):
                 TimeSetting = 30 #in minutes
                 if len(IDs) > 0:
                     if len(IDs) > 0 and (time.time()-T0[-1]) > 60*TimeSetting and message.author.id in IDs:
