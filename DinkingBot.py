@@ -471,10 +471,11 @@ async def on_message(message):
             
         if 'blacklist' == message.content.lower()[:9] and message.author.id in Trusted_IDs:
             target = int(message.content.lower()[10:])
-            blacklist.append(target)
-            if target in IDs:
-                Delete(target)
-            await message.reply('User added to blacklist')
+            if target not in Trusted_IDs:
+                blacklist.append(target)
+                if target in IDs:
+                    Delete(target)
+                await message.reply('User added to blacklist')
         
         
         if 'bbspam' in message.content.lower()[:6] and message.author.id in Trusted_IDs:
