@@ -972,7 +972,7 @@ async def on_message(message):
 
 
 token = open("token.txt", "r").read()
-# client.run(token)
+client.run(token)
 
 
 
