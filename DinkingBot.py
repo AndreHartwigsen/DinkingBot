@@ -540,7 +540,7 @@ async def on_message(message):
             await client.close()
         if 'fuck off bot then come back' == message.content.lower() and message.author.id in Trusted_IDs:
             await message.channel.send('Okay restarting')
-            if 'win' not in sys.platform:
+            if True:#'win' not in sys.platform:
                 exec_return = os.system('git pull https://github.com/AndreHartwigsen/DinkingBot.git')
                 print(exec_return)
             os.execv(sys.executable, ['python'] + sys.argv)
