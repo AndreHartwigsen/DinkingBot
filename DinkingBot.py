@@ -538,6 +538,11 @@ async def on_message(message):
         if 'fuck off bot' == message.content.lower() and message.author.id in Trusted_IDs:
             await message.channel.send('Okay bye')
             await client.close()
+        if 'update bot' == message.content.lower() and message.author.id in Trusted_IDs:
+            await message.channel.send('Updating from github')
+            if 'win' not in sys.platform:
+                exec_return = os.system('git pull https://github.com/AndreHartwigsen/DinkingBot.git')
+                print(exec_return)
         if 'fuck off bot then come back' == message.content.lower() and message.author.id in Trusted_IDs:
             await message.channel.send('Okay restarting')
             if 'win' not in sys.platform:
