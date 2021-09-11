@@ -52,7 +52,7 @@ def Calculator(string):
 #     return string
 
 def week_hour():
-    day = int(time.strftime('%w'))-1
+    day = int(time.strftime('%w',time.gmtime()))-1
     hour_of_day = int(time.strftime('%H',time.gmtime()))
     if day == -1:
         day = 6
@@ -368,6 +368,7 @@ Fun = True
 admin_dink_time_override = False
 Sponsor_message = False
 N_requirement = 3
+Fredag_post = False
 
 T0 = [0]
 T_dink = [0]
@@ -420,7 +421,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 @client.event
 async def on_message(message):
     if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
-        global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted
+        global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
         print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
 
         
@@ -502,7 +503,17 @@ async def on_message(message):
             if 'bbcum' in message.content.lower()[:5]  or 'cum' in message.content.lower()[:3]:
                 await message.channel.send(file=discord.File('./images/cum/%s' % Link_selector([s for s in os.listdir("./images/cum/") if '.ini' not in s])) )        
             if 'bbshitpost' in message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl'== message.content.lower():
-                await message.channel.send(file=discord.File('./images/shitpost/%s' % Link_selector([s for s in os.listdir("./images/shitpost/") if '.ini' not in s])) )
+                if not Fredag_post and int(time.strftime('%w',time.gmtime())) == 5:
+                    await message.reply('NU ÄR DET FREDAG!!!',file=discord.File('./images/shitpost/friday33.mp4'))
+                    Fredag_post = True
+                else:
+                    File_Selected = Link_selector([s for s in os.listdir("./images/shitpost/") if '.ini' not in s])
+                    while 'friday33' in File_Selected:
+                        File_Selected = Link_selector([s for s in os.listdir("./images/shitpost/") if '.ini' not in s])
+                    await message.channel.send(file=discord.File('./images/shitpost/%s' %File_Selected ) )
+                if Fredag_post and int(time.strftime('%w',time.gmtime())) != 5:
+                    Fredag_post = False
+            
             
             
             if 'wave' in message.content.lower()[:4]:
