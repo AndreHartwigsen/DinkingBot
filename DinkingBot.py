@@ -561,6 +561,9 @@ async def on_message(message):
                 await client.close()
             else:
                 os.execv(sys.executable, ['python'] + sys.argv)
+        if 'kill bot' == message.content.lower() and message.author.id in Trusted_IDs:
+            os.system('pm2 stop DinkingBot')
+            await client.close()
 
         
         
