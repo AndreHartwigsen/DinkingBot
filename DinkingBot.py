@@ -500,7 +500,7 @@ async def on_message(message):
                 await message.channel.send(file=discord.File('./images/fren/%s' % Link_selector([s for s in os.listdir("./images/fren/") if '.ini' not in s])) )
             if 'bbcyka' in message.content.lower()[:6] or 'bbrus' in message.content.lower()[:5] or 'bbblyat' in message.content.lower()[:7]:
                 await message.channel.send(file=discord.File('./images/russia/%s' % Link_selector([s for s in os.listdir("./images/russia/") if '.ini' not in s])) )
-            if 'bbcum' in message.content.lower()[:5]  or 'cum' in message.content.lower()[:3]:
+            if 'bbcum' in message.content.lower()[:5]  or 'cum' in message.content.lower()[:3] or 'sborra' in message.content.lower()[:6]:
                 await message.channel.send(file=discord.File('./images/cum/%s' % Link_selector([s for s in os.listdir("./images/cum/") if '.ini' not in s])) )        
             if 'bbshitpost' in message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl'== message.content.lower():
                 if not Fredag_post and int(time.strftime('%w',time.gmtime())) == 5:
