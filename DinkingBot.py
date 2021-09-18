@@ -376,6 +376,7 @@ Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64)) ; Temp_Trusted = []
 bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
 Channels = list(np.loadtxt('Channels.txt',np.int64))
 blacklist = []
+dink_blacklist = [652986939443773450]
 
 
 
@@ -477,6 +478,13 @@ async def on_message(message):
                 if target in IDs:
                     Delete(target)
                 await message.reply('User added to blacklist')
+        if 'dink blacklist' == message.content.lower()[:14] and message.author.id in Trusted_IDs:
+            target = int(message.content.lower()[10:])
+            if target not in Trusted_IDs:
+                dink_blacklist.append(target)
+                if target in IDs:
+                    Delete(target)
+                await message.reply('User added to dinking blacklist')
         
         
         if 'bbspam' in message.content.lower()[:6] and message.author.id in Trusted_IDs:
@@ -634,7 +642,7 @@ async def on_message(message):
         for ID in IDs:
             username = await client.fetch_user(ID)
             Nicks.append(str(username)[:-5]) 
-        if dink_time() or admin_dink_time_override or message.author.id in Trusted_IDs:
+        if (dink_time() or admin_dink_time_override or message.author.id in Trusted_IDs) and message.author.id not in dink_blacklist:
             
             
             async def Tally(Message=None):
