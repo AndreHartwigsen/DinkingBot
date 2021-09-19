@@ -228,7 +228,7 @@ import random
 def rotate(l, n):
     return l[n:] + l[:n]
 orders = [[0]]*2
-for i in range(98):
+for i in range(298):
     orders.append(list(np.arange(i+2)))
     random.shuffle(orders[i+2])
 
@@ -297,19 +297,12 @@ client = discord.Client()
 @client.event  # event decorator/wrapper
 async def on_ready():
     print(f"Logged in as {client.user}")
-    # text_channel_list = []
-    # for channel in client.get_all_channels():
-    #     text_channel_list.append(channel.name)
-    # print(text_channel_list)
-
-
-
-
 
 
 
 #-----------------------------------------------------------------------
-spam_commands = ["wave [content]"
+spam_commands = ['vtrigger'
+                 ,"wave [content]"
                  ,"bbcum/cum"
                  ,"cope/seethe"
                  ,"bbfriend"
@@ -318,7 +311,8 @@ spam_commands = ["wave [content]"
                  ,"bbshitpost"
                  ,'crywank'
                  ]
-spam_desc     = ["Create an exponentially decaying squared sinusoidal wave of [content]. (Only works with GPF and default emojis and any message)"
+spam_desc     = ["Make Villain say something"
+                 ,"Create an exponentially decaying squared sinusoidal wave of [content]. (Only works with GPF and default emojis and any message)"
                  ,"Random cum related stuff."
                  ,"Random cope/seethe related stuff."
                  ,"Random wholesome related stuff."
@@ -361,6 +355,7 @@ dinking_desc = ["Dinks a random user (ALTs: bbskål & bbprost)."
                 ]
 #-----------------------------------------------------------------------
 admin_commands = [ "bbreset"
+                    ,"Percentage [num]"
                     ,"bbspam"
                     ,"bboverride"
                     ,"bbvillain"
@@ -369,6 +364,7 @@ admin_commands = [ "bbreset"
                     ,"bbclear"
                     ]
 admin_desc = ["Resets all tallys and points (5 points 0 dinks/drinks)."
+                ,'Percentage trigger chance for villain [0-100]'
                 ,"Toggle the spam commands."
                 ,"Toggles the dinking time blocker, resets upon restart."
                 ,"Dink all players in the game (30min cooldown)."
@@ -444,6 +440,25 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 
 
+bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
+bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe']
+def Contains_command(message):
+    space_index = message.find(' ')
+    if space_index != -1:
+        msg = message[:space_index]
+    else:
+        msg = message
+    out = False
+    if len(message) < (len(msg)+1):
+        for s in bc:
+            if s in msg:
+                out = True
+        for s in bc2:
+            if s in msg:
+                out = True
+    return out
+
+
 
 @client.event
 async def on_message(message):
@@ -461,7 +476,7 @@ async def on_message(message):
             if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
                 await message.channel.send(message.content)
     
-    if message.channel.id in markov_channels:
+    if message.channel.id in markov_channels and not Contains_command(message.content.lower()):
         if message.content.lower()[:10] == 'percentage' and message.author.id in Trusted_IDs:
             global markov_chance_percentage
             try:
@@ -709,7 +724,7 @@ async def on_message(message):
 
 #------------------------------------- DINKING RELATED STUFF-----------------------------------------#
 
-        bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
+
         def check_command(msg=message.content.lower()):
             for s in bc:
                 if s in msg[:len(s)]:
