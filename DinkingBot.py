@@ -6,6 +6,7 @@ import matplotlib
 import os
 import sys
 import requests
+import markovify as mk
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 nest_asyncio.apply()
@@ -266,6 +267,30 @@ def wave(string,amplitude = 100,Nstop= 5):
     return total
 
 
+
+#------MARKOV-------------------------------------------------------------------------------
+def MarkovModel(file):
+    text = list(pd.read_csv(file)['message'])
+    return mk.Text(text)
+text_model = MarkovModel('LoggedText0.csv')
+markov_chance_percentage = 5
+
+def Generate_sentence(pct=markov_chance_percentage,length = None):
+    if np.random.rand()<pct/100:
+        if length == None:
+            msg = text_model.make_sentence(length)
+            while msg == None:
+                msg = text_model.make_sentence(length)
+        else:
+            msg = text_model.make_short_sentence(length)
+            while msg == None:
+                msg = text_model.make_short_sentence(length)
+        return msg
+    else:
+        return None
+markov_channels = [870997447374176267,863028160795115583,857670559038570507]
+#-------------------------------------------------------------------------------------------
+
 import discord
 import asyncio
 client = discord.Client()
@@ -422,6 +447,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 @client.event
 async def on_message(message):
+    global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
     if message.author != client.user and message.channel.id in repeat_channels:
         
         message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
@@ -435,43 +461,64 @@ async def on_message(message):
             if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
                 await message.channel.send(message.content)
     
-    if message.author.id == 252070848800882688 and message.content.lower() == 'villain, engage fed mode':
+    if message.channel.id in markov_channels:
+        if message.content.lower()[:10] == 'percentage' and message.author.id in Trusted_IDs:
+            global markov_chance_percentage
+            try:
+                new_pct = float(message.content.lower()[11:])
+                if new_pct >= 0 and new_pct <= 100:
+                    markov_chance_percentage = new_pct
+                    await message.channel.send( 'Villain trigger chance changed to %.4g%%'% (markov_chance_percentage),delete_after = 10)
+                else:
+                    await message.reply('Percentage must be between 0 and 100',delete_after = 10)
+            except:
+                await message.reply('Invalid syntax',delete_after = 10)
+        if message.content.lower() == 'vtrigger':
+            await message.channel.send(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
+        elif message.author != client.user:
+            mark_msg = Generate_sentence(markov_chance_percentage)
+            if mark_msg != None:
+                await message.channel.send(mark_msg,allowed_mentions=discord.AllowedMentions(users=False))
+    
+    
+        
+
+
+    if message.author.id in Trusted_IDs and message.content.lower() == 'villain, engage fed mode':
         await message.channel.send('Alright stealing all the messages in this channel (this will take a while)',delete_after=10)
         async def Logger(limit=None):
             T0 = time.time()
-            T1 = T0
             i = 0
             print('-----------------------------------------------------------')
             print('Logging commenced')
             messages = []
             author = []
             date = []
+            everything = []
             async for d in message.channel.history(limit=limit):
                 i+=1
                 if not d.author.bot and len(d.content)>0 and 'http' not in d.content:
                     messages.append(d.content)
                     author.append(d.author.name)
                     date.append(d.id)
+                    everything.append(d)
                     if i%5000 == 0:
                         TN = time.time()
-                        TD = TN - T1
-                        T1 = TN
+                        TD = TN - T0
                         print('%i done at %i per sec' % (i,i/TD))
             TN = time.time()
-            TD = TN - T1
-            T1 = TN
+            TD = TN - T0
             print('%i done at %i per sec' % (i,i/TD))
-            print('Total time was %i seconds'%(T1-T0))
+            print('Total time was %i seconds'%(TD))
             print('-----------------------------------------------------------')
-            await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (T1-T0)/60 , i/(T1-T0) ) ,delete_after=10)
-            df = pd.DataFrame({'author':author , 'message':messages , 'date':date})
+            await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (TD)/60 , i/(TD) ) ,delete_after=10)
+            df = pd.DataFrame({'author':author , 'message':messages , 'date':date , 'everything':everything})
             df.to_csv('LoggedText.csv',index=False)
         await Logger()
     
 
     
     if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
-        global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
         print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
 
         
