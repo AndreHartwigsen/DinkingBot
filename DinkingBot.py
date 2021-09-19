@@ -375,7 +375,7 @@ T_dink = [0]
 Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64)) ; Temp_Trusted = []
 bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
 Channels = list(np.loadtxt('Channels.txt',np.int64))
-repeat_channels = [730787222445490252,857670559038570507,863028160795115583,810263180533956708,778287703300505650]
+repeat_channels = [730787222445490252,857670559038570507,863028160795115583,810263180533956708,778287703300505650,743024581916360755]
 blacklist = []
 dink_blacklist = [652986939443773450]
 
