@@ -435,6 +435,39 @@ async def on_message(message):
             if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
                 await message.channel.send(message.content)
     
+    if message.author.id == 252070848800882688 and message.content.lower() == 'villain, engage fed mode':
+        await message.channel.send('Alright stealing all the messages in this channel (this will take a while)',delete_after=10)
+        async def Logger(limit=None):
+            T0 = time.time()
+            T1 = T0
+            i = 0
+            print('-----------------------------------------------------------')
+            print('Logging commenced')
+            messages = []
+            author = []
+            date = []
+            async for d in message.channel.history(limit=limit):
+                i+=1
+                if not d.author.bot and len(d.content)>0 and 'http' not in d.content:
+                    messages.append(d.content)
+                    author.append(d.author.name)
+                    date.append(d.id)
+                    if i%5000 == 0:
+                        TN = time.time()
+                        TD = TN - T1
+                        T1 = TN
+                        print('%i done at %i per sec' % (i,i/TD))
+            TN = time.time()
+            TD = TN - T1
+            T1 = TN
+            print('%i done at %i per sec' % (i,i/TD))
+            print('Total time was %i seconds'%(T1-T0))
+            print('-----------------------------------------------------------')
+            await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (T1-T0)/60 , i/(T1-T0) ) ,delete_after=10)
+            df = pd.DataFrame({'author':author , 'message':messages , 'date':date})
+            df.to_csv('LoggedText.csv',index=False)
+        await Logger()
+    
 
     
     if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
