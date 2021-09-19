@@ -422,7 +422,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 @client.event
 async def on_message(message):
-    if (message.author != client.user and message.channel.id in repeat_channels):
+    if message.author != client.user and message.channel.id in repeat_channels:
         
         message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
         async for msg in message.channel.history(limit=7+N_requirement):
@@ -435,10 +435,7 @@ async def on_message(message):
             if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
                 await message.channel.send(message.content)
     
-    
-    
-    
-    
+
     
     if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
         global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
