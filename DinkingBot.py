@@ -375,6 +375,7 @@ T_dink = [0]
 Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64)) ; Temp_Trusted = []
 bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
 Channels = list(np.loadtxt('Channels.txt',np.int64))
+repeat_channels = [730787222445490252,857670559038570507,863028160795115583,810263180533956708,778287703300505650]
 blacklist = []
 dink_blacklist = [652986939443773450]
 
@@ -421,6 +422,24 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 @client.event
 async def on_message(message):
+    if (message.author != client.user and message.channel.id in repeat_channels):
+        
+        message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
+        async for msg in message.channel.history(limit=7+N_requirement):
+            all_message_history.append(msg.content)
+            all_ID_history.append(msg.author.id)
+            if msg.author != client.user:
+                message_history.append(msg.content)
+                ID_history.append(msg.author.id)
+        if len(np.unique([x.lower() for x in message_history[:N_requirement]])) == 1:
+            if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
+                await message.channel.send(message.content)
+    
+    
+    
+    
+    
+    
     if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
         global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
         print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
@@ -572,18 +591,7 @@ async def on_message(message):
             os.system('pm2 stop DinkingBot')
             await client.close()
 
-        
-        
-        message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
-        async for msg in message.channel.history(limit=7+N_requirement):
-            all_message_history.append(msg.content)
-            all_ID_history.append(msg.author.id)
-            if msg.author != client.user:
-                message_history.append(msg.content)
-                ID_history.append(msg.author.id)
-        if len(np.unique([x.lower() for x in message_history[:N_requirement]])) == 1:
-            if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
-                await message.channel.send(message.content)
+
         
         if 'bbclear' == message.content.lower() and message.author.id in Trusted_IDs:
             Clear_all()
