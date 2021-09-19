@@ -475,6 +475,10 @@ async def on_message(message):
                 await message.reply('Invalid syntax',delete_after = 10)
         if message.content.lower() == 'vtrigger':
             await message.channel.send(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
+        elif message.reference is not None:
+            messg = await client.get_channel(message.channel.id).fetch_message(message.reference.message_id)
+            if messg.author == client.user:
+                await message.reply(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.author != client.user:
             mark_msg = Generate_sentence(markov_chance_percentage)
             if mark_msg != None:
