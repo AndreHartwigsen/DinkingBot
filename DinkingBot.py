@@ -13,7 +13,7 @@ nest_asyncio.apply()
 
 
 
-
+#https://github.com/jsvine/markovify
 def list_creator(names):
     N = len(names)
     if N == 1:
@@ -272,8 +272,22 @@ def wave(string,amplitude = 100,Nstop= 5):
 def MarkovModel(file):
     text = list(pd.read_csv(file)['message'])
     return mk.Text(text)
-text_model = MarkovModel('LoggedText0.csv')
-markov_chance_percentage = 5
+
+def MarkovModel2(directory='./MarkovSource/'):
+    files = os.listdir(directory)
+    text = ''
+    for s in files:
+        if 'Logged' in s:
+            t1 = '\n'.join(list(pd.read_csv(directory+s)['message']))
+        else:
+            with open(directory+s) as f:
+                t1 = f.read()
+        text = '\n'.join([text,t1])
+    return mk.Text(text)
+text_model = MarkovModel2()
+
+
+markov_chance_percentage = 15
 
 def Generate_sentence(pct=markov_chance_percentage,length = None):
     if np.random.rand()<pct/100:
@@ -513,14 +527,12 @@ async def on_message(message):
             messages = []
             author = []
             date = []
-            everything = []
             async for d in message.channel.history(limit=limit):
                 i+=1
                 if not d.author.bot and len(d.content)>0 and 'http' not in d.content:
                     messages.append(d.content)
                     author.append(d.author.name)
                     date.append(d.id)
-                    everything.append(d)
                     if i%5000 == 0:
                         TN = time.time()
                         TD = TN - T0
@@ -531,8 +543,8 @@ async def on_message(message):
             print('Total time was %i seconds'%(TD))
             print('-----------------------------------------------------------')
             await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (TD)/60 , i/(TD) ) ,delete_after=10)
-            df = pd.DataFrame({'author':author , 'message':messages , 'date':date , 'everything':everything})
-            df.to_csv('LoggedText.csv',index=False)
+            df = pd.DataFrame({'author':author , 'message':messages , 'date':date})
+            df.to_csv('./MarkovSource/LoggedText%i.csv'%(message.channel.id),index=False)
         await Logger()
     
 
