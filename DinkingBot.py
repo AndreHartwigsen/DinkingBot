@@ -273,23 +273,33 @@ def MarkovModel(file):
     text = list(pd.read_csv(file)['message'])
     return mk.Text(text)
 
+
 def MarkovModel2(directory='./MarkovSource/'):
+    def NewLineLister(string):
+        out = []
+        remainder = string
+        while '\n' in remainder:
+            index = remainder.find('\n')
+            if len(remainder[:index])>2:
+                out.append(remainder[:index])
+            remainder = remainder[index+1:]
+        return out
     files = os.listdir(directory)
-    text = ''
+    text = []
     for s in files:
         if 'Logged' in s:
-            t1 = '\n'.join(list(pd.read_csv(directory+s)['message']))
+            text = text + list(pd.read_csv(directory+s)['message'])
         else:
             with open(directory+s) as f:
-                t1 = f.read()
-        text = '\n'.join([text,t1])
+                text = text + NewLineLister(f.read())
+                #text.append( f.read() )
     return mk.Text(text)
 text_model = MarkovModel2()
 
 
 markov_chance_percentage = 15
 
-def Generate_sentence(pct=markov_chance_percentage,length = None):
+def Generate_sentence(pct=markov_chance_percentage,length = 250):
     if np.random.rand()<pct/100:
         if length == None:
             msg = text_model.make_sentence(length)
@@ -503,13 +513,13 @@ async def on_message(message):
             except:
                 await message.reply('Invalid syntax',delete_after = 10)
         if message.content.lower() == 'vtrigger':
-            await message.channel.send(Generate_sentence(100,250),allowed_mentions=discord.AllowedMentions(users=False))
+            await message.channel.send(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.reference is not None:
             messg = await client.get_channel(message.channel.id).fetch_message(message.reference.message_id)
             if messg.author == client.user:
-                await message.reply(Generate_sentence(100,250),allowed_mentions=discord.AllowedMentions(users=False))
+                await message.reply(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.author != client.user:
-            mark_msg = Generate_sentence(markov_chance_percentage,250)
+            mark_msg = Generate_sentence(markov_chance_percentage)
             if mark_msg != None:
                 await message.channel.send(mark_msg,allowed_mentions=discord.AllowedMentions(users=False))
     
