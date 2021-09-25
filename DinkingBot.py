@@ -500,7 +500,7 @@ async def on_message(message):
             if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
                 await message.channel.send(message.content)
     
-    if message.channel.id in markov_channels and not Contains_command(message.content.lower()):
+    if message.channel.id in markov_channels and not Contains_command(message.content.lower()) and message.author != client.user:
         if message.content.lower()[:10] == 'percentage' and message.author.id in Trusted_IDs:
             global markov_chance_percentage
             try:
