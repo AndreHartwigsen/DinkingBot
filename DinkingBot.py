@@ -296,7 +296,7 @@ def MarkovModel2(directory='./MarkovSource/',Text_only = False):
     if Text_only:
         return text
     else:
-        return mk.Text(text)
+        return mk.NewlineText(text)
 text_model = MarkovModel2()
 
 
@@ -664,7 +664,7 @@ async def on_message(message):
                 await message.channel.send(file=discord.File('./images/cum/%s' % Link_selector([s for s in os.listdir("./images/cum/") if '.ini' not in s])) )        
             if 'crywank' == message.content.lower() or 'bbcrywank' == message.content.lower():
                 await message.channel.send(Link_selector(crywank_gifs))
-            if 'bbshitpost' == message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl' == message.content.lower():
+            if 'bbshitpost' == message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl' == message.content.lower() or '💩 post' == message.content.lower():
                 if not Fredag_post and int(time.strftime('%w',time.gmtime())) == 5:
                     await message.reply('NU ÄR DET FREDAG!!!',file=discord.File('./images/shitpost/friday33.mp4'))
                     Fredag_post = True
