@@ -274,7 +274,7 @@ def MarkovModel(file):
     return mk.Text(text)
 
 
-def MarkovModel2(directory='./MarkovSource/'):
+def MarkovModel2(directory='./MarkovSource/',Text_only = False):
     def NewLineLister(string):
         out = []
         remainder = string
@@ -293,22 +293,38 @@ def MarkovModel2(directory='./MarkovSource/'):
             with open(directory+s) as f:
                 text = text + NewLineLister(f.read())
                 #text.append( f.read() )
-    return mk.Text(text)
+    if Text_only:
+        return text
+    else:
+        return mk.Text(text)
 text_model = MarkovModel2()
+
+
+def Sentence_relevance(question=None,length=250,Nattempt=250,remove_characters=[',','.','?','!']):
+    if question == None:
+        return text_model.make_short_sentence(length)
+    else:
+        for s in remove_characters:
+            question.replace(s,'')
+        words = question.lower().split()
+        sentences = []
+        Ncommon = np.zeros(Nattempt)
+        for i in range(Nattempt):
+            sentences.append(text_model.make_short_sentence(length))
+            for y in range(len(words)):
+                if words[y] in sentences[i].lower().split():
+                    Ncommon[i] += 1
+        #print(np.sort(Ncommon)[::-1][:3])
+        return sentences[np.argmax(Ncommon)]
 
 
 markov_chance_percentage = 15
 
-def Generate_sentence(pct=markov_chance_percentage,length = 250):
+def Generate_sentence(pct=markov_chance_percentage,question=None,length = 250):
     if np.random.rand()<pct/100:
-        if length == None:
-            msg = text_model.make_sentence(length)
-            while msg == None:
-                msg = text_model.make_sentence(length)
-        else:
-            msg = text_model.make_short_sentence(length)
-            while msg == None:
-                msg = text_model.make_short_sentence(length)
+        msg = Sentence_relevance(question=question,length=length)
+        while msg == None:
+            msg = Sentence_relevance(question=question,length=length)
         return msg
     else:
         return None
@@ -517,9 +533,9 @@ async def on_message(message):
         elif message.reference is not None:
             messg = await client.get_channel(message.channel.id).fetch_message(message.reference.message_id)
             if messg.author == client.user:
-                await message.reply(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
+                await message.reply(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
         elif client.user in message.mentions or 'villain' in message.content.lower():
-            await message.reply(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
+            await message.channel.send(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.author != client.user:
             mark_msg = Generate_sentence(markov_chance_percentage)
             if mark_msg != None:
@@ -565,17 +581,17 @@ async def on_message(message):
         print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
 
         
-        if 'hello villain' == message.content.lower() or 'hey villain' == message.content.lower():
-            if countdown_timer(message.author.id,'hey'):
-                await message.reply('Hey x, weekend warrior!')
-        if 'hello' == message.content.lower():
-            if countdown_timer(message.author.id,'hey'):
-                await message.reply('Hey weekend warrior!')
+        # if 'hello villain' == message.content.lower() or 'hey villain' == message.content.lower():
+        #     if countdown_timer(message.author.id,'hey'):
+        #         await message.reply('Hey x, weekend warrior!')
+        # if 'hello' == message.content.lower():
+        #     if countdown_timer(message.author.id,'hey'):
+        #         await message.reply('Hey weekend warrior!')
         if 'hello boys' == message.content.lower() or 'hello boys.' == message.content.lower():
             if countdown_timer(message.author.id,'pablo',cooldown=30*60):
                 await message.reply(Link_selector(Neckbeard_gifs))
-        if 'bye villain' == message.content.lower() and countdown_timer(message.author.id,'leaving'):
-            await message.reply('There is no leaving (apart from opting out)')
+        # if 'bye villain' == message.content.lower() and countdown_timer(message.author.id,'leaving'):
+        #     await message.reply('There is no leaving (apart from opting out)')
 
         
         if "!zoom" == message.content.lower():
@@ -634,21 +650,21 @@ async def on_message(message):
             await message.channel.send(f'{message.author.mention}. Only LeCerial and Truxa has the right to touch sperm. 👀')
             
         if Fun:
-            if 'bbmandy' in message.content.lower()[:7]:
+            if 'bbmandy' == message.content.lower()[:7]:
                 await message.channel.send(Link_selector(Mandy_vids))
-            if 'bbengland' in message.content.lower()[:9]:
+            if 'bbengland' == message.content.lower()[:9]:
                 await message.channel.send(file=discord.File('./images/england/%s' % Link_selector([s for s in os.listdir("./images/england/") if '.ini' not in s])))
-            if 'cope' in message.content.lower()[:4] or 'seethe' in message.content.lower()[:6]:
+            if 'cope' == message.content.lower() or 'seethe' == message.content.lower():
                 await message.channel.send(file=discord.File('./images/cope/%s' % Link_selector([s for s in os.listdir("./images/cope/") if '.ini' not in s])))
-            if 'bbfren' in message.content.lower()[:6] or 'bbfrien' in message.content.lower()[:7] or 'bbfriend' in message.content.lower()[:8]:
+            if 'bbfren' == message.content.lower()[:6] or 'bbfrien' == message.content.lower()[:7] or 'bbfriend' == message.content.lower()[:8]:
                 await message.channel.send(file=discord.File('./images/fren/%s' % Link_selector([s for s in os.listdir("./images/fren/") if '.ini' not in s])) )
-            if 'bbcyka' in message.content.lower()[:6] or 'bbrus' in message.content.lower()[:5] or 'bbblyat' in message.content.lower()[:7]:
+            if 'bbcyka' == message.content.lower()[:6] or 'bbrus' == message.content.lower()[:5] or 'bbblyat' == message.content.lower()[:7]:
                 await message.channel.send(file=discord.File('./images/russia/%s' % Link_selector([s for s in os.listdir("./images/russia/") if '.ini' not in s])) )
-            if 'bbcum' in message.content.lower()[:5]  or 'cum' in message.content.lower()[:3] or 'sborra' in message.content.lower()[:6]:
+            if 'bbcum' == message.content.lower()  or 'cum' == message.content.lower() or 'sborra' == message.content.lower():
                 await message.channel.send(file=discord.File('./images/cum/%s' % Link_selector([s for s in os.listdir("./images/cum/") if '.ini' not in s])) )        
             if 'crywank' == message.content.lower() or 'bbcrywank' == message.content.lower():
                 await message.channel.send(Link_selector(crywank_gifs))
-            if 'bbshitpost' in message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl'== message.content.lower():
+            if 'bbshitpost' == message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl' == message.content.lower():
                 if not Fredag_post and int(time.strftime('%w',time.gmtime())) == 5:
                     await message.reply('NU ÄR DET FREDAG!!!',file=discord.File('./images/shitpost/friday33.mp4'))
                     Fredag_post = True
