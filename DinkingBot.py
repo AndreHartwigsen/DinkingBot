@@ -300,7 +300,7 @@ def MarkovModel2(directory='./MarkovSource/',Text_only = False):
 text_model = MarkovModel2()
 
 
-def Sentence_relevance(question=None,length=250,Nattempt=250,remove_characters=[',','.','?','!']):
+def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[',','.','?','!']):
     if question == None:
         return text_model.make_short_sentence(length)
     else:
@@ -533,8 +533,10 @@ async def on_message(message):
         elif message.reference is not None:
             messg = await client.get_channel(message.channel.id).fetch_message(message.reference.message_id)
             if messg.author == client.user:
+                await message.channel.trigger_typing()
                 await message.reply(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
         elif client.user in message.mentions or 'villain' in message.content.lower():
+            await message.channel.trigger_typing()
             await message.channel.send(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.author != client.user:
             mark_msg = Generate_sentence(markov_chance_percentage)
