@@ -653,20 +653,28 @@ async def on_message(message):
             
         if Fun:
             if 'bbmandy' == message.content.lower()[:7]:
+                await message.channel.trigger_typing()
                 await message.channel.send(Link_selector(Mandy_vids))
             if 'bbengland' == message.content.lower()[:9]:
+                await message.channel.trigger_typing()
                 await message.channel.send(file=discord.File('./images/england/%s' % Link_selector([s for s in os.listdir("./images/england/") if '.ini' not in s])))
             if 'cope' == message.content.lower() or 'seethe' == message.content.lower():
+                await message.channel.trigger_typing()
                 await message.channel.send(file=discord.File('./images/cope/%s' % Link_selector([s for s in os.listdir("./images/cope/") if '.ini' not in s])))
             if 'bbfren' == message.content.lower()[:6] or 'bbfrien' == message.content.lower()[:7] or 'bbfriend' == message.content.lower()[:8]:
+                await message.channel.trigger_typing()
                 await message.channel.send(file=discord.File('./images/fren/%s' % Link_selector([s for s in os.listdir("./images/fren/") if '.ini' not in s])) )
             if 'bbcyka' == message.content.lower()[:6] or 'bbrus' == message.content.lower()[:5] or 'bbblyat' == message.content.lower()[:7]:
+                await message.channel.trigger_typing()
                 await message.channel.send(file=discord.File('./images/russia/%s' % Link_selector([s for s in os.listdir("./images/russia/") if '.ini' not in s])) )
             if 'bbcum' == message.content.lower()  or 'cum' == message.content.lower() or 'sborra' == message.content.lower():
+                await message.channel.trigger_typing()
                 await message.channel.send(file=discord.File('./images/cum/%s' % Link_selector([s for s in os.listdir("./images/cum/") if '.ini' not in s])) )        
             if 'crywank' == message.content.lower() or 'bbcrywank' == message.content.lower():
+                await message.channel.trigger_typing()
                 await message.channel.send(Link_selector(crywank_gifs))
             if 'bbshitpost' == message.content.lower()[:10]  or 'shitpost' == message.content.lower() or 'lortepæl' == message.content.lower() or '💩 post' == message.content.lower():
+                await message.channel.trigger_typing()
                 if not Fredag_post and int(time.strftime('%w',time.gmtime())) == 5:
                     await message.reply('NU ÄR DET FREDAG!!!',file=discord.File('./images/shitpost/friday33.mp4'))
                     Fredag_post = True
@@ -681,6 +689,7 @@ async def on_message(message):
             
             
             if 'wave' in message.content.lower()[:4]:
+                await message.channel.trigger_typing()
                 T_wave_cooldown = 30*60
                 if countdown_timer(message.author.id,'emoji',T_wave_cooldown) or (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted):
                     emoji = message.content[5:]
@@ -943,6 +952,7 @@ async def on_message(message):
                 
                 
             if "bbtally" in message.content.lower()[:7]:
+                await message.channel.trigger_typing()
                 await Tally()
             
             
@@ -960,6 +970,7 @@ async def on_message(message):
                 
                 
             if 'bbprobbig' in message.content.lower()[:len('bbprobbig')] or 'bbprob big' in message.content.lower()[:len('bbprob big')]:
+                await message.channel.trigger_typing()
                 if len(IDs)>0:
                     def Pie(name='Pie.png'):
                         plt.figure(figsize=(6,4),dpi=150)
@@ -977,6 +988,7 @@ async def on_message(message):
                 else:
                     await message.reply('No players in the game')
             elif 'bbprob' in message.content.lower()[:6]:
+                await message.channel.trigger_typing()
                 if len(IDs)>0:
                     await PROB()
                 else:
@@ -1071,6 +1083,7 @@ async def on_message(message):
             
             
             if 'bbvillain' == message.content.lower() and (message.author.id in Trusted_IDs or message.author.id in Temp_Trusted or message.author.id in bbvillain_IDs):
+                await message.channel.trigger_typing()
                 TimeSetting = 30 #in minutes
                 if len(IDs) > 0:
                     if len(IDs) > 0 and (time.time()-T0[-1]) > 60*TimeSetting and message.author.id in IDs:
