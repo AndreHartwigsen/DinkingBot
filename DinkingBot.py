@@ -430,6 +430,7 @@ Fun = True
 admin_dink_time_override = False
 Sponsor_message = False
 N_requirement = 3
+N_pink_extra = 2
 Fredag_post = False
 
 T0 = [0]
@@ -507,14 +508,16 @@ async def on_message(message):
     if message.author != client.user and message.channel.id in repeat_channels:
         
         message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
-        async for msg in message.channel.history(limit=7+N_requirement):
+        NNN = N_requirement
+        if message.channel.id == 730787222445490252: NNN = N_requirement + N_pink_extra
+        async for msg in message.channel.history(limit=7+NNN):
             all_message_history.append(msg.content)
             all_ID_history.append(msg.author.id)
             if msg.author != client.user:
                 message_history.append(msg.content)
                 ID_history.append(msg.author.id)
-        if len(np.unique([x.lower() for x in message_history[:N_requirement]])) == 1:
-            if len(np.unique(ID_history[:N_requirement])) == N_requirement and client.user.id not in all_ID_history[:N_requirement]:
+        if len(np.unique([x.lower() for x in message_history[:NNN]])) == 1:
+            if len(np.unique(ID_history[:NNN])) == NNN and client.user.id not in all_ID_history[:NNN]:
                 await message.channel.send(message.content)
     
     if message.channel.id in markov_channels and not Contains_command(message.content.lower()) and message.author != client.user:
