@@ -290,7 +290,7 @@ def MarkovModel2(directory='./MarkovSource/',Text_only = False):
         if 'Logged' in s:
             text = text + list(pd.read_csv(directory+s)['message'])
         else:
-            with open(directory+s) as f:
+            with open(directory+s, encoding="utf8") as f:
                 text = text + NewLineLister(f.read())
                 #text.append( f.read() )
     if Text_only:
@@ -300,7 +300,7 @@ def MarkovModel2(directory='./MarkovSource/',Text_only = False):
 text_model = MarkovModel2()
 
 
-def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[',','.','?','!']):
+def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[',','.','?','!','villain','Villain']):
     if question == None:
         return text_model.make_short_sentence(length)
     else:
@@ -313,7 +313,8 @@ def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[
             sentences.append(text_model.make_short_sentence(length))
             for y in range(len(words)):
                 if words[y] in sentences[i].lower().split():
-                    Ncommon[i] += 1
+                    if len(words[y])>3:
+                        Ncommon[i] += 1
         #print(np.sort(Ncommon)[::-1][:3])
         return sentences[np.argmax(Ncommon)]
 
@@ -580,7 +581,7 @@ async def on_message(message):
 
     
     if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
-        print(f"{message.channel}: {message.channel.id}: {message.author.name}: {message.content}")
+        print(f"{message.channel}:: {message.author.name}: {message.content}")
 
         
         # if 'hello villain' == message.content.lower() or 'hey villain' == message.content.lower():
