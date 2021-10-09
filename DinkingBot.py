@@ -273,6 +273,20 @@ def MarkovModel(file):
     text = list(pd.read_csv(file)['message'])
     return mk.Text(text)
 
+def your_mom_joke():
+    Dir='./MarkovSource/'
+    with open(Dir+'jokes_your_mom.txt') as f:
+        text = f.read().splitlines()
+    removal = []
+    for i in range(len(text)):
+        if len(text[i]) == 0:
+            removal.append(i)
+    text = np.delete(text,removal)
+    return str(text[np.random.randint(len(text))])
+
+
+
+
 
 def MarkovModel2(directory='./MarkovSource/',Text_only = False):
     def NewLineLister(string):
@@ -289,7 +303,7 @@ def MarkovModel2(directory='./MarkovSource/',Text_only = False):
     for s in files:
         if 'Logged' in s:
             text = text + list(pd.read_csv(directory+s)['message'])
-        else:
+        elif 'joke' not in s:
             with open(directory+s, encoding="utf8") as f:
                 text = text + NewLineLister(f.read())
                 #text.append( f.read() )
@@ -538,15 +552,22 @@ async def on_message(message):
             messg = await client.get_channel(message.channel.id).fetch_message(message.reference.message_id)
             if messg.author == client.user:
                 await message.channel.trigger_typing()
-                await message.reply(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
+                if 'your mom' in message.content.lower():
+                    await asyncio.sleep(5)
+                    await message.channel.send(your_mom_joke())
+                else:
+                    await message.reply(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
         elif client.user in message.mentions or 'villain' in message.content.lower():
             await message.channel.trigger_typing()
-            await message.channel.send(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
+            if 'your mom' in message.content.lower():
+                await asyncio.sleep(5)
+                await message.channel.send(your_mom_joke())
+            else:
+                await message.channel.send(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.author != client.user:
             mark_msg = Generate_sentence(markov_chance_percentage)
             if mark_msg != None:
                 await message.channel.send(mark_msg,allowed_mentions=discord.AllowedMentions(users=False))
-    
     
         
 
