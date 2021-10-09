@@ -269,10 +269,15 @@ def wave(string,amplitude = 100,Nstop= 5):
 
 
 #------MARKOV-------------------------------------------------------------------------------
-def MarkovModel(file):
-    text = list(pd.read_csv(file)['message'])
-    return mk.Text(text)
 
+mom_list = ['your mom','yo mamma','yo mom','my mom','his mom', 'their mom','a mom ']
+def mom_mention(msg):
+    out = False
+    for s in mom_list:
+        if s in msg:
+            out = True
+            break
+    return out
 def your_mom_joke():
     Dir='./MarkovSource/'
     with open(Dir+'jokes_your_mom.txt') as f:
@@ -287,7 +292,9 @@ def your_mom_joke():
 
 
 
-
+def MarkovModel(file):
+    text = list(pd.read_csv(file)['message'])
+    return mk.Text(text)
 def MarkovModel2(directory='./MarkovSource/',Text_only = False):
     def NewLineLister(string):
         out = []
@@ -327,9 +334,8 @@ def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[
             sentences.append(text_model.make_short_sentence(length))
             for y in range(len(words)):
                 if words[y] in sentences[i].lower().split():
-                    if len(words[y])>3:
+                    if len(words[y])>3 and words[y] != 'villain':
                         Ncommon[i] += 1
-        #print(np.sort(Ncommon)[::-1][:3])
         return sentences[np.argmax(Ncommon)]
 
 
@@ -516,6 +522,8 @@ def Contains_command(message):
 
 
 
+
+
 @client.event
 async def on_message(message):
     global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
@@ -552,15 +560,15 @@ async def on_message(message):
             messg = await client.get_channel(message.channel.id).fetch_message(message.reference.message_id)
             if messg.author == client.user:
                 await message.channel.trigger_typing()
-                if 'your mom' in message.content.lower():
-                    await asyncio.sleep(5)
+                if mom_mention(message.content.lower()):
+                    await asyncio.sleep(4)
                     await message.channel.send(your_mom_joke())
                 else:
                     await message.reply(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
         elif client.user in message.mentions or 'villain' in message.content.lower():
             await message.channel.trigger_typing()
-            if 'your mom' in message.content.lower():
-                await asyncio.sleep(5)
+            if mom_mention(message.content.lower()):
+                await asyncio.sleep(4)
                 await message.channel.send(your_mom_joke())
             else:
                 await message.channel.send(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
