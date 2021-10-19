@@ -450,7 +450,7 @@ Fun = True
 admin_dink_time_override = False
 Sponsor_message = False
 N_requirement = 3
-N_pink_extra = -2
+N_pink_extra = -1
 Fredag_post = False
 
 T0 = [0]
@@ -540,10 +540,7 @@ async def on_message(message):
                 ID_history.append(msg.author.id)
         if len(np.unique([x.lower() for x in message_history[:NNN]])) == 1:
             if len(np.unique(ID_history[:NNN])) == NNN and client.user.id not in all_ID_history[:NNN]:
-                if message.channel.id == 730787222445490252:
-                    await message.reply(message.content)
-                else:
-                    await message.channel.send(message.content)
+                await message.channel.send(message.content)
     
     if message.channel.id in markov_channels and not Contains_command(message.content.lower()) and message.author != client.user:
         if message.content.lower()[:10] == 'percentage' and message.author.id in Trusted_IDs:
