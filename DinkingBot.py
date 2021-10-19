@@ -450,7 +450,7 @@ Fun = True
 admin_dink_time_override = False
 Sponsor_message = False
 N_requirement = 3
-N_pink_extra = 2
+N_pink_extra = -1
 Fredag_post = False
 
 T0 = [0]
