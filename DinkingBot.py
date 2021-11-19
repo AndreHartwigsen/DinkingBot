@@ -450,7 +450,7 @@ Fun = True
 admin_dink_time_override = False
 Sponsor_message = False
 N_requirement = 3
-N_pink_extra = 1
+N_pink_extra = 0
 Fredag_post = False
 
 T0 = [0]
@@ -611,9 +611,9 @@ async def on_message(message):
         await Logger()
     
 
-    
-    if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
+    if (message.channel.id in Channels) and message.author.id not in blacklist:
         print(f"{message.channel}:: {message.author.name}: {message.content}")
+    if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
 
         
         # if 'hello villain' == message.content.lower() or 'hey villain' == message.content.lower():
@@ -1002,7 +1002,7 @@ async def on_message(message):
                 
                 
                 
-            if 'bbprobbig' in message.content.lower()[:len('bbprobbig')] or 'bbprob big' in message.content.lower()[:len('bbprob big')]:
+            if 'bbprobbig' in message.content.lower()[:len('bbprobbig')] or 'bbprob big' in message.content.lower()[:len('bbprob big')] or 'bbstatsbig' in message.content.lower()[:len('bbstatsbig')] or 'bbstats big' in message.content.lower()[:len('bbstats big')]:
                 await message.channel.trigger_typing()
                 if len(IDs)>0:
                     def Pie(name='Pie.png'):
@@ -1013,14 +1013,14 @@ async def on_message(message):
                         for i in ex:
                             if i >= np.max(points):
                                 ex[i] = 0.1
-                        wedges, texts,autotext= ax.pie(points,explode=ex,labels=labels,autopct='%.1f%%',radius=1.2,textprops=dict(color="w"))
+                        wedges, texts,autotext= ax.pie(prob_proportionality(points),explode=ex,labels=labels,autopct='%.1f%%',radius=1.2,textprops=dict(color="w"))
                         plt.savefig(name,transparent=True)
                     Pie()
                     file = discord.File("Pie.png", filename="Probability.png")
                     await message.reply('Probability to get selected at random',file=file)
                 else:
                     await message.reply('No players in the game')
-            elif 'bbprob' in message.content.lower()[:6]:
+            elif 'bbprob' in message.content.lower()[:6] or 'bbstats' in message.content.lower()[:7]:
                 await message.channel.trigger_typing()
                 if len(IDs)>0:
                     await PROB()
