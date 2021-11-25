@@ -397,7 +397,7 @@ def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[
         for i in range(Nattempt):
             sentences.append(text_model.make_short_sentence(length))
             for y in range(len(words)):
-                if words[y] in sentences[i].lower().split():
+                if words[y] in sentences[i].lower():
                     if len(words[y])>3 and words[y] != 'villain':
                         Ncommon[i] += 1
         return sentences[np.argmax(Ncommon)]
@@ -557,7 +557,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 
 bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
-bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe']
+bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra']
 def Contains_command(message):
     space_index = message.find(' ')
     if space_index != -1:
