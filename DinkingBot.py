@@ -268,6 +268,70 @@ def wave(string,amplitude = 100,Nstop= 5):
 
 
 
+
+
+import discord
+import asyncio
+intents = discord.Intents.default()
+intents.members = True
+client = discord.Client(intents=intents)
+
+
+@client.event  # event decorator/wrapper
+async def on_ready():
+    def guild_getter():
+        guild_members = []
+        guild_ids = [guild.id for guild in client.guilds]
+        for ig in range(len(guild_ids)):
+            guild = client.get_guild(guild_ids[ig])
+            temp = []
+            for member in guild.members:
+                temp.append(member.id)
+            guild_members.append(temp)
+        return guild_members,guild_ids
+    global guild_members , guild_ids
+    guild_members,guild_ids = guild_getter()
+    print(f"Logged in as {client.user}")
+    print("Guild IDs",guild_ids)
+    print("Guild member counts",[len(guild_members[i]) for i in range(len(guild_members))])
+    if "restart_channel.csv" in os.listdir():
+        if len(list(pd.read_csv("restart_channel.csv")['value']))>0:
+            await client.get_channel(list(pd.read_csv("restart_channel.csv")['value'])[0]).send("Hi I'm back 🔥🤝😈")
+            await client.get_channel(list(pd.read_csv("restart_channel.csv")['value'])[0]).send("Fuck you <@!252070848800882688> and <@!190897913314934784>",allowed_mentions=discord.AllowedMentions(users=False),delete_after=2)
+    df = pd.DataFrame({"value":[]})
+    df.to_csv("restart_channel.csv")
+
+def invalid_user_fix(txt,guild_id):
+    ff = "<@!"
+    if ff not in txt:
+        return txt
+    else:
+        def find_all(a_str, sub):
+            start = 0
+            while True:
+                start = a_str.find(sub, start)
+                if start == -1: return
+                yield start
+                start += len(sub) # use start += 1 to find overlapping matches
+        def Nn(txt,start_index):
+            txt = txt[start_index:]
+            return -txt.index(ff) + txt.find(">")
+        
+        
+        pos = np.asarray(list(find_all(txt,ff)))
+        mentions = []
+        for i in range(len(pos)):
+            num = int(txt[pos[i]+len(ff):pos[i]+Nn(txt,pos[i])])
+            print(num)
+            if num not in mentions:
+                mentions.append(num)
+        IDS = guild_members[guild_ids.index(guild_id)]
+        for i in range(len(mentions)):
+            if mentions[i] not in IDS:
+                print('yes')
+                txt=txt.replace(str(mentions[i]),str(np.random.choice(IDS)))
+        return txt
+
 #------MARKOV-------------------------------------------------------------------------------
 
 mom_list = ['your mom','yo mamma','yo mom','my mom','his mom', 'their mom','a mom ']
@@ -341,26 +405,16 @@ def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[
 
 markov_chance_percentage = 15
 
-def Generate_sentence(pct=markov_chance_percentage,question=None,length = 250):
+def Generate_sentence(pct=markov_chance_percentage,question=None,length = 250,server_id=565951111589265430):
     if np.random.rand()<pct/100:
         msg = Sentence_relevance(question=question,length=length)
         while msg == None:
             msg = Sentence_relevance(question=question,length=length)
-        return msg
+        return invalid_user_fix(msg,server_id)
     else:
         return None
 markov_channels = [870997447374176267,863028160795115583,857670559038570507]
 #-------------------------------------------------------------------------------------------
-
-import discord
-import asyncio
-client = discord.Client()
-@client.event  # event decorator/wrapper
-async def on_ready():
-    print(f"Logged in as {client.user}")
-
-
-
 #-----------------------------------------------------------------------
 spam_commands = ['vtrigger'
                  ,"wave [content]"
@@ -555,7 +609,7 @@ async def on_message(message):
             except:
                 await message.reply('Invalid syntax',delete_after = 10)
         if message.content.lower() == 'vtrigger':
-            await message.channel.send(Generate_sentence(100),allowed_mentions=discord.AllowedMentions(users=False))
+            await message.channel.send(Generate_sentence(100,server_id=message.guild.id),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.reference is not None:
             messg = await client.get_channel(message.channel.id).fetch_message(message.reference.message_id)
             if messg.author == client.user:
@@ -564,16 +618,16 @@ async def on_message(message):
                     await asyncio.sleep(4)
                     await message.channel.send(your_mom_joke())
                 else:
-                    await message.reply(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
+                    await message.reply(Generate_sentence(100,message.content,server_id=message.guild.id),allowed_mentions=discord.AllowedMentions(users=False))
         elif client.user in message.mentions or 'villain' in message.content.lower():
             await message.channel.trigger_typing()
             if mom_mention(message.content.lower()):
                 await asyncio.sleep(4)
                 await message.channel.send(your_mom_joke())
             else:
-                await message.channel.send(Generate_sentence(100,message.content),allowed_mentions=discord.AllowedMentions(users=False))
+                await message.channel.send(Generate_sentence(100,message.content,server_id=message.guild.id),allowed_mentions=discord.AllowedMentions(users=False))
         elif message.author != client.user:
-            mark_msg = Generate_sentence(markov_chance_percentage)
+            mark_msg = Generate_sentence(markov_chance_percentage,server_id=message.guild.id)
             if mark_msg != None:
                 await message.channel.send(mark_msg,allowed_mentions=discord.AllowedMentions(users=False))
     
@@ -589,6 +643,7 @@ async def on_message(message):
             print('Logging commenced')
             messages = []
             author = []
+            id_author = []
             date = []
             async for d in message.channel.history(limit=limit):
                 i+=1
@@ -596,6 +651,7 @@ async def on_message(message):
                     messages.append(d.content)
                     author.append(d.author.name)
                     date.append(d.id)
+                    id_author.append(d.author.id)
                     if i%5000 == 0:
                         TN = time.time()
                         TD = TN - T0
@@ -606,7 +662,7 @@ async def on_message(message):
             print('Total time was %i seconds'%(TD))
             print('-----------------------------------------------------------')
             await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (TD)/60 , i/(TD) ) ,delete_after=10)
-            df = pd.DataFrame({'author':author , 'message':messages , 'date':date})
+            df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date})
             df.to_csv('./MarkovSource/LoggedText%i.csv'%(message.channel.id),index=False)
         await Logger()
     
@@ -751,10 +807,15 @@ async def on_message(message):
         #         await message.channel.send('https://cdn.discordapp.com/attachments/865152397192855572/868789061198966804/Semen.png')
             
             
-
+        async def closing_options():
+            channel = message.channel.id
+            df = pd.DataFrame({"value":[channel]})
+            df.to_csv("restart_channel.csv")
+            await client.close()
+            
         if 'fuck off bot' == message.content.lower() and message.author.id in Trusted_IDs:
             await message.channel.send('Okay bye')
-            await client.close()
+            await closing_options()
         if 'update bot' == message.content.lower() and message.author.id in Trusted_IDs:
             await message.channel.send('Updating from github')
             if 'win' not in sys.platform:
@@ -764,12 +825,12 @@ async def on_message(message):
             await message.channel.send('Okay restarting')
             if 'win' not in sys.platform:
                 os.system('git pull https://github.com/AndreHartwigsen/DinkingBot.git')
-                await client.close()
+                await closing_options()
             else:
                 os.execv(sys.executable, ['python'] + sys.argv)
         if 'kill bot' == message.content.lower() and message.author.id in Trusted_IDs:
             os.system('pm2 stop DinkingBot')
-            await client.close()
+            await closing_options()
 
 
         
