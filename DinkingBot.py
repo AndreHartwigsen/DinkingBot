@@ -504,7 +504,7 @@ Fun = True
 admin_dink_time_override = False
 Sponsor_message = False
 N_requirement = 3
-N_pink_extra = 0
+N_pink_extra = 1
 Fredag_post = False
 
 T0 = [0]
@@ -512,7 +512,7 @@ T_dink = [0]
 Trusted_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64)) ; Temp_Trusted = []
 bbvillain_IDs = list(np.loadtxt('Trusted_IDs.txt',np.int64))
 Channels = list(np.loadtxt('Channels.txt',np.int64))
-repeat_channels = [730787222445490252,857670559038570507,863028160795115583,810263180533956708,778287703300505650,743024581916360755]
+repeat_channels = [730787222445490252,857670559038570507,863028160795115583,810263180533956708,778287703300505650,743024581916360755,870997447374176267]
 blacklist = []
 dink_blacklist = [652986939443773450]
 
@@ -573,13 +573,20 @@ def Contains_command(message):
             if s in msg:
                 out = True
     return out
-
+def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dick","denied","cunt","fuck you","bot",""]):
+    i = 0
+    while i<len(lst):
+        if lst[i] in msg.lower():
+            return True
+        i +=1
+    return False
 
 
 
 
 @client.event
 async def on_message(message):
+    speak_permission = True
     global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
     if message.author != client.user and message.channel.id in repeat_channels:
         
@@ -592,11 +599,20 @@ async def on_message(message):
             if msg.author != client.user:
                 message_history.append(msg.content)
                 ID_history.append(msg.author.id)
+        last_message_blocker = len(np.unique([x.lower() for x in message_history[:NNN]])) == 2 and message_history[:NNN][0].lower() not in [x.lower() for x in message_history[:NNN][1:]]
+        if last_message_blocker and client.user.id not in all_ID_history[:NNN]:
+            if contained_in_list(message_history[0].lower()):
+                message_history[0] = message_history[1]
+    
         if len(np.unique([x.lower() for x in message_history[:NNN]])) == 1:
             if len(np.unique(ID_history[:NNN])) == NNN and client.user.id not in all_ID_history[:NNN]:
-                await message.channel.send(message.content)
+                if last_message_blocker:
+                    await message.reply("Villain block-blocker™️ activated, going ahead anyways because fuck you I'm Villain",delete_after=10)
+                await message.channel.send(message_history[0])
+                speak_permission = False
+                
     
-    if message.channel.id in markov_channels and not Contains_command(message.content.lower()) and message.author != client.user:
+    if message.channel.id in markov_channels and not Contains_command(message.content.lower()) and message.author != client.user and speak_permission:
         if message.content.lower()[:10] == 'percentage' and message.author.id in Trusted_IDs:
             global markov_chance_percentage
             try:
