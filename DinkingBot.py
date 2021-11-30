@@ -573,7 +573,7 @@ def Contains_command(message):
             if s in msg:
                 out = True
     return out
-def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dick","denied","cunt","fuck you","bot"]):
+def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dick","denied","cunt","fuck you","bot","nope"]):
     i = 0
     while i<len(lst):
         if lst[i] in msg.lower():
