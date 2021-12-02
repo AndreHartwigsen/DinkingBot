@@ -646,7 +646,7 @@ async def on_message(message):
                 await message.channel.send(mark_msg,allowed_mentions=discord.AllowedMentions(users=False))
     
     if message.author.id in Trusted_IDs and 'fed mode' in message.content.lower():   
-        async def Logger(limit=None,channel_id=message.channel.id,skipper = "http"):
+        async def Logger(limit=None,channel_id=message.channel.id,skipper = "http",LOC = "./MarkovSource/"):
             T0 = time.time()
             i = 0
             print('-----------------------------------------------------------')
@@ -676,7 +676,7 @@ async def on_message(message):
             print('-----------------------------------------------------------')
             await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (TD)/60 , i/(TD) ) ,delete_after=10)
             df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date , "datetime":datetime})
-            df.to_csv('./MarkovSource/LoggedText%i.csv'%(channel_id),index=False)
+            df.to_csv(LOC+'LoggedText%i.csv'%(channel_id),index=False)
 
     if message.author.id in Trusted_IDs and message.content.lower() == 'villain, engage fed mode':
         await message.channel.send('Alright stealing all the messages in this channel (this will take a while)',delete_after=10)
@@ -686,7 +686,7 @@ async def on_message(message):
         # print([client.get_channel(channel_id).server.me.permission for channel_id in all_channels])
         for chid in all_channels:
             try:
-                await Logger(channel_id=chid,skipper=None)
+                await Logger(channel_id=chid,skipper=None,LOC = "./Fed Data/")
             except:
                 print("Skipped channel (No permission) %s" %client.get_channel(chid).name)
     
