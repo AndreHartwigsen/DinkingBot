@@ -30,8 +30,6 @@ def list_creator(names):
     return out
 
 def Calculator(string):
-    if 'os.' in string or 'sys.' in string:
-        return 'Module not allowed'
     result = {}
     try:
         exec('a =%s' % string,None,result)
@@ -557,7 +555,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 
 bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
-bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra']
+bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode"]
 def Contains_command(message):
     space_index = message.find(' ')
     if space_index != -1:
@@ -573,7 +571,7 @@ def Contains_command(message):
             if s in msg:
                 out = True
     return out
-def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dick","denied","cunt","fuck you","bot","nope"]):
+def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dick","denied","cunt","fuck you","bot"]):
     i = 0
     while i<len(lst):
         if lst[i] in msg.lower():
@@ -647,12 +645,8 @@ async def on_message(message):
             if mark_msg != None:
                 await message.channel.send(mark_msg,allowed_mentions=discord.AllowedMentions(users=False))
     
-        
-
-
-    if message.author.id in Trusted_IDs and message.content.lower() == 'villain, engage fed mode':
-        await message.channel.send('Alright stealing all the messages in this channel (this will take a while)',delete_after=10)
-        async def Logger(limit=None):
+    if message.author.id in Trusted_IDs and 'fed mode' in message.content.lower():   
+        async def Logger(limit=None,channel_id=message.channel.id,skipper = "http"):
             T0 = time.time()
             i = 0
             print('-----------------------------------------------------------')
@@ -661,30 +655,44 @@ async def on_message(message):
             author = []
             id_author = []
             date = []
-            async for d in message.channel.history(limit=limit):
+            datetime = []
+            async for d in client.get_channel(channel_id).history(limit=limit):
                 i+=1
-                if not d.author.bot and len(d.content)>0 and 'http' not in d.content:
-                    messages.append(d.content)
-                    author.append(d.author.name)
-                    date.append(d.id)
-                    id_author.append(d.author.id)
-                    if i%5000 == 0:
-                        TN = time.time()
-                        TD = TN - T0
-                        print('%i done at %i per sec' % (i,i/TD))
+                if not d.author.bot and len(d.content)>0: 
+                    if skipper == None or skipper not in d.content:
+                        messages.append(d.content)
+                        author.append(d.author.name)
+                        date.append(d.id)
+                        id_author.append(d.author.id)
+                        datetime.append(d.created_at)
+                        if i%5000 == 0:
+                            TN = time.time()
+                            TD = TN - T0
+                            print('%i done at %i per sec' % (i,i/TD))
             TN = time.time()
             TD = TN - T0
             print('%i done at %i per sec' % (i,i/TD))
             print('Total time was %i seconds'%(TD))
             print('-----------------------------------------------------------')
             await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (TD)/60 , i/(TD) ) ,delete_after=10)
-            df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date})
-            df.to_csv('./MarkovSource/LoggedText%i.csv'%(message.channel.id),index=False)
+            df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date , "datetime":datetime})
+            df.to_csv('./MarkovSource/LoggedText%i.csv'%(channel_id),index=False)
+
+    if message.author.id in Trusted_IDs and message.content.lower() == 'villain, engage fed mode':
+        await message.channel.send('Alright stealing all the messages in this channel (this will take a while)',delete_after=10)
         await Logger()
+    if message.author.id in Trusted_IDs and message.content.lower() == 'engage fed mode':
+        all_channels = [s.id for s in message.guild.text_channels]
+        # print([client.get_channel(channel_id).server.me.permission for channel_id in all_channels])
+        for chid in all_channels:
+            try:
+                await Logger(channel_id=chid,skipper=None)
+            except:
+                print("Skipped channel (No permission) %s" %client.get_channel(chid).name)
     
 
     if (message.channel.id in Channels) and message.author.id not in blacklist:
-        print(f"{message.channel}:: {message.author.name}: {message.content}")
+        print(f"{message.channel}:{message.created_at}:: {message.author.name}: {message.content}")
     if (message.author != client.user and message.channel.id in Channels) and message.author.id not in blacklist:
 
         
