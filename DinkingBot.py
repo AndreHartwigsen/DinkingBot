@@ -794,10 +794,10 @@ async def on_message(message):
             TN = time.time()
             TD = TN - T0
             channel_ids = [channel_id]*len(messages)
-            print('%i done at %i per sec' % (i,i/TD))
+            print('%i done of %s at %i per sec' % (i,client.get_channel(channel_id).name,i/TD))
             print('Total time was %i seconds'%(TD))
             print('-----------------------------------------------------------')
-            await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (TD)/60 , i/(TD) ) ,delete_after=10)
+            await message.channel.send('Total of %i messaged logged in %s, taking %i minutes at %i messages per second' % ( i , client.get_channel(channel_id).name , (TD)/60 , i/(TD) ) ,delete_after=10)
             df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date , "datetime":datetime , "channel":channel_ids})
             df.to_csv(LOC+'LoggedText%i.csv'%(channel_id),index=False)
 
