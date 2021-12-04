@@ -666,10 +666,10 @@ def score_update(ID,timestamp,channel):
 @client.event
 async def on_message(message):
     if score_update(message.author.id, str(message.created_at),message.channel.id):
-        await message.channel.send(  f"{message.author.name} just gained another villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
+        await message.channel.send(  f"{message.author.name} just gained **another** villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
         
         
-        
+    
         
         
         
