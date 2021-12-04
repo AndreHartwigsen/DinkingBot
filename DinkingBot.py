@@ -557,7 +557,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 
 bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
-bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode","bbrank","bblevel"]
+bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode","bbrank","bblevel","bbinfo"]
 def Contains_command(message):
     space_index = message.find(' ')
     if space_index != -1:
@@ -582,6 +582,8 @@ def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dic
     return False
 
 #--------------Levels--------------------------------------------------------------------------------------------
+fed_skip = [774356474054836235]
+
 import datetime
 epoch = datetime.datetime.utcfromtimestamp(0)
 def dt_to_time(dt):
@@ -685,7 +687,7 @@ async def get_banner(ID):
 @client.event
 async def on_message(message):
     if score_update(message.author.id, str(message.created_at),message.channel.id):
-        await message.channel.send(  f"{message.author.nick} just gained **another** villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
+        await message.channel.send(  f"{message.author.nick} just gained **another** Villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
         
         
     
@@ -802,7 +804,7 @@ async def on_message(message):
             datetime = []
             async for d in client.get_channel(channel_id).history(limit=limit):
                 i+=1
-                if not d.author.bot and len(d.content)>0: 
+                if len(d.content)>0: 
                     if skipper == None or skipper not in d.content:
                         messages.append(d.content)
                         author.append(d.author.name)
