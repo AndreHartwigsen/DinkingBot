@@ -589,7 +589,6 @@ points_lower = 15
 points_upper = 25
 villain_extra  = 20
 bot_channels = [870997447374176267,863028160795115583,857670559038570507]
-fed_skip = [774356474054836235]
 
 
 def reset_score(LOC = "./Fed Data/",time_points = 60):
@@ -633,8 +632,11 @@ if "levels" not in locals():
     try:
         levels = import_score()
     except:
-        reset_score()
-        levels = import_score()
+        if "SavedScore.csv" in os.listdir("./Fed Data/"):
+            levels = import_score()
+        else:
+            reset_score()
+            levels = import_score()
 
 def lvl(points,a=400,b=500,info = False):
     level = np.floor((-b+np.sqrt(2*a*np.asarray(points,dtype=np.int64)+b**2)) / a)+1
@@ -681,7 +683,7 @@ async def get_banner(ID):
 @client.event
 async def on_message(message):
     if score_update(message.author.id, str(message.created_at),message.channel.id):
-        await message.channel.send(  f"{message.author.name} just gained **another** villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
+        await message.channel.send(  f"{message.author.nick} just gained **another** villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
         
         
     
@@ -714,7 +716,7 @@ async def on_message(message):
             lst2 = [str(message.author.created_at)[:10],str(message.author.joined_at)[:10],message.author.top_role.name,str(message.author.activity)]
             embed.add_field(name="User info"  , value=''.join(string_gen(lst1[:2],lst2[:2]))  ,inline=True)
             embed.add_field(name="Server info", value=''.join(string_gen(lst1[2:],lst2[2:]))  ,inline=True)
-            embed.add_field(name="Villain level: %i"%level, value="XP: %i `[%s%s]` %i\nCurrent amount of XP: %i\nXP needed for next level: %i"%( xp_low,"#"*percentage_score,"-"*(Nmarks-percentage_score),xp_up,levels['score'][levels['IDs'].index(message.author.id)],remaining ),inline=False)
+            embed.add_field(name="Villain level: %i"%level, value="XP: %i `[%s%s]` %i\nCurrent amount of XP: %i\nXP needed for next level: %i"%( xp_low,"#"*(Nmarks-percentage_score),"-"*percentage_score,xp_up,levels['score'][levels['IDs'].index(message.author.id)],remaining ),inline=False)
             if banner != None:
                 embed.set_thumbnail(url=banner)
             await message.channel.send(embed=embed)
