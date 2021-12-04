@@ -555,7 +555,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 
 bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
-bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode"]
+bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode","bbrank","bblevel"]
 def Contains_command(message):
     space_index = message.find(' ')
     if space_index != -1:
@@ -579,14 +579,129 @@ def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dic
         i +=1
     return False
 
+#--------------Levels--------------------------------------------------------------------------------------------
+import datetime
+epoch = datetime.datetime.utcfromtimestamp(0)
+def dt_to_time(dt):
+    return (datetime.datetime.fromisoformat(dt) - epoch).total_seconds()
+points_lower = 15
+points_upper = 25
+villain_extra  = 20
+time_xp = 60
+bot_channels = [870997447374176267,863028160795115583,857670559038570507]
+
+
+def reset_score(LOC = "./Fed Data/",time_points = time_xp):
+    files = [s for s in os.listdir(LOC) if "LoggedText" in s]
+    
+    
+    master_file = pd.concat([pd.read_csv(LOC+s) for s in files])
+    
+    IDs = list(master_file['ID'])
+    channel  = list(master_file['channel'])
+    dt = [dt_to_time(s) for s in list(master_file['datetime'])]
+    users = np.unique(IDs)
+    
+    
+    score = np.zeros(len(users))
+    end_time = []
+    for i in range(len(users)):
+        spec_time = np.array(dt)[np.where(IDs == users[i])[0]]
+        spec_channel = np.array(channel)[np.where(IDs == users[i])[0]]
+        spec_diff = np.roll(spec_time,1)-spec_time
+        spec_diff[0] = time_points+1e-5
+        spec_villain = [np.sum(x == spec_channel) for x in bot_channels]
+        score[i] = np.sum(np.random.randint(points_lower,1+points_upper,np.sum(spec_diff >= time_points))) + villain_extra*sum(spec_villain)
+        end_time.append(spec_time[-1])
+    
+    df = pd.DataFrame({ "User_ID":users , "score":score , "last_msg":end_time })
+    df.to_csv(LOC+"SavedScore.csv",index=False)
+    if "levels" not in locals():
+        global levels
+        levels = import_score()
+
+def import_score(LOC = "./Fed Data/"):
+    levels = {}
+    file = pd.read_csv(LOC+"SavedScore.csv")
+    levels['IDs'] = list(file['User_ID'])
+    levels['score'] = list(file['score'])
+    levels['time'] = list(file['last_msg'])
+    return levels
+
+if "levels" not in locals():
+    try:
+        levels = import_score()
+    except:
+        reset_score()
+        levels = import_score()
+
+def lvl(points,a=400,b=500):
+    return np.floor((-b+np.sqrt(2*a*np.asarray(points,dtype=np.int64)+b**2)) / a)+1
+
+def score_update(ID,timestamp,channel):
+    level_up = False
+    mpier = 0
+    if channel in bot_channels:
+        mpier = villain_extra
+    dt = dt_to_time(timestamp)
+    if ID in levels['IDs']:
+        idx = levels['IDs'].index(ID)
+        if dt - levels['time'][idx] >= time_xp:
+            earned = np.random.randint(points_lower,1+points_upper) + mpier
+            if lvl(levels['score'][idx]+earned)>lvl(levels['score'][idx]):
+                level_up = True
+            levels['score'][idx] += earned
+            levels['time'][idx] = dt
+    else:
+        levels['IDs'].append(ID)
+        levels['score'].append(np.random.randint(points_lower,1+points_upper) + mpier)
+        levels['time'].append(dt)
+    return level_up
+
+#----------------------------------------------------------------------------------------------------------------
+
 
 
 
 @client.event
 async def on_message(message):
+    if score_update(message.author.id, str(message.created_at),message.channel.id):
+        await message.channel.send(  f"{message.author.name} just gained another villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
+        
+        
+        
+        
+        
+        
+        
     speak_permission = True
     global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
+    if message.author.id in Trusted_IDs and message.content.lower() == "reset score":
+        reset_score()
+        await message.channel.send("Score reset complete",delete_after=5)
+    
+    
+    
+    
+        
+    
+    
+    
     if message.author != client.user and message.channel.id in repeat_channels:
+        if message.content.lower() in ["bbrank","bblevel"] and message.author.id in Trusted_IDs:
+            await message.channel.send("You are villain level %i with score %i"  
+                                       % ( int(lvl(levels['score'][levels['IDs'].index(message.author.id)]))
+                                          ,int(levels['score'][levels['IDs'].index(message.author.id)]))
+                                       )
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
         NNN = N_requirement
@@ -671,11 +786,12 @@ async def on_message(message):
                             print('%i done at %i per sec' % (i,i/TD))
             TN = time.time()
             TD = TN - T0
+            channel_ids = [channel_id]*len(messages)
             print('%i done at %i per sec' % (i,i/TD))
             print('Total time was %i seconds'%(TD))
             print('-----------------------------------------------------------')
             await message.channel.send('Total of %i messaged logged in %i minutes at %i messages per second' % ( i , (TD)/60 , i/(TD) ) ,delete_after=10)
-            df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date , "datetime":datetime})
+            df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date , "datetime":datetime , "channel":channel_ids})
             df.to_csv(LOC+'LoggedText%i.csv'%(channel_id),index=False)
 
     if message.author.id in Trusted_IDs and message.content.lower() == 'villain, engage fed mode':
@@ -689,6 +805,7 @@ async def on_message(message):
                 await Logger(channel_id=chid,skipper=None,LOC = "./Fed Data/")
             except:
                 print("Skipped channel (No permission) %s" %client.get_channel(chid).name)
+        await message.reply('Fed mode finished',delete_after=10)
     
 
     if (message.channel.id in Channels) and message.author.id not in blacklist:
