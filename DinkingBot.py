@@ -771,7 +771,7 @@ async def on_message(message):
         async def Logger(limit=None,channel_id=message.channel.id,skipper = "http",LOC = "./MarkovSource/"):
             T0 = time.time()
             i = 0
-            print('-----------------------------------------------------------')
+            print('-------------------------%s----------------------------------' % client.get_channel(channel_id).name)
             print('Logging commenced')
             messages = []
             author = []
