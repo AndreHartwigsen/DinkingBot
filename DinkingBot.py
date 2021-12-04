@@ -583,15 +583,15 @@ def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dic
 import datetime
 epoch = datetime.datetime.utcfromtimestamp(0)
 def dt_to_time(dt):
-    return (datetime.datetime.fromisoformat(dt) - epoch).total_seconds()
+    convert = datetime.datetime.strptime(dt,'%Y-%m-%d %H:%M:%S.%f')
+    return (convert - epoch).total_seconds()
 points_lower = 15
 points_upper = 25
 villain_extra  = 20
-time_xp = 60
 bot_channels = [870997447374176267,863028160795115583,857670559038570507]
 
 
-def reset_score(LOC = "./Fed Data/",time_points = time_xp):
+def reset_score(LOC = "./Fed Data/",time_points = 60):
     files = [s for s in os.listdir(LOC) if "LoggedText" in s]
     
     
@@ -635,8 +635,15 @@ if "levels" not in locals():
         reset_score()
         levels = import_score()
 
-def lvl(points,a=400,b=500):
-    return np.floor((-b+np.sqrt(2*a*np.asarray(points,dtype=np.int64)+b**2)) / a)+1
+def lvl(points,a=400,b=500,info = False):
+    level = np.floor((-b+np.sqrt(2*a*np.asarray(points,dtype=np.int64)+b**2)) / a)+1
+    xp_up = 1/2*a*level**2 + b*level
+    xp_low =  1/2*a*(level-1)**2 + b*(level-1)
+    remaining = xp_up-points
+    if not info:
+        return level
+    else:
+        return level,xp_low,xp_up,remaining
 
 def score_update(ID,timestamp,channel):
     level_up = False
@@ -646,7 +653,7 @@ def score_update(ID,timestamp,channel):
     dt = dt_to_time(timestamp)
     if ID in levels['IDs']:
         idx = levels['IDs'].index(ID)
-        if dt - levels['time'][idx] >= time_xp:
+        if dt - levels['time'][idx] >= 60:
             earned = np.random.randint(points_lower,1+points_upper) + mpier
             if lvl(levels['score'][idx]+earned)>lvl(levels['score'][idx]):
                 level_up = True
