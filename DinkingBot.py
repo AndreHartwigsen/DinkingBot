@@ -436,6 +436,7 @@ spam_desc     = ["Make Villain say something"
                  ]
 #-----------------------------------------------------------------------
 utility_commands = ["Hello"
+                    ,"bbrank"
                     ,"!zoom"
                     ,"?live/!live"
                     ,"GPF"
@@ -443,6 +444,7 @@ utility_commands = ["Hello"
                     ,"horren"
                     ]
 utility_desc    = ["Checks if Villain is online"
+                   ,"Get information about your villain rank"
                    ,"GPF/Mizzy zoom call."
                    ,"Check if a twitch user is online"
                    ,"GPF    twitch link an live status"
@@ -705,7 +707,7 @@ async def on_message(message):
     
     
     if message.author != client.user and message.channel.id in repeat_channels:
-        if message.content.lower() in ["bbrank","bblevel","bbinfo"] and message.author.id in Trusted_IDs:
+        if message.content.lower() in ["bbrank","bblevel","bbinfo"]:
             level,xp_low,xp_up,remaining = lvl(levels['score'][levels['IDs'].index(message.author.id)],info=True)
             Nmarks = 35
             percentage_score = int(np.floor(Nmarks*remaining/(xp_up-xp_low) ))
