@@ -589,6 +589,7 @@ points_lower = 15
 points_upper = 25
 villain_extra  = 20
 bot_channels = [870997447374176267,863028160795115583,857670559038570507]
+fed_skip = [774356474054836235]
 
 
 def reset_score(LOC = "./Fed Data/",time_points = 60):
@@ -667,7 +668,14 @@ def score_update(ID,timestamp,channel):
 
 #----------------------------------------------------------------------------------------------------------------
 
-
+async def get_banner(ID):
+    req = await client.http.request(discord.http.Route("GET", "/users/{uid}", uid=ID))
+    banner_id = req["banner"]
+    if banner_id:
+        banner_url = f"https://cdn.discordapp.com/banners/{ID}/{banner_id}"
+        return banner_url
+    else:
+        return None
 
 
 @client.event
@@ -695,11 +703,21 @@ async def on_message(message):
     
     
     if message.author != client.user and message.channel.id in repeat_channels:
-        if message.content.lower() in ["bbrank","bblevel"] and message.author.id in Trusted_IDs:
-            await message.channel.send("You are villain level %i with score %i"  
-                                       % ( int(lvl(levels['score'][levels['IDs'].index(message.author.id)]))
-                                          ,int(levels['score'][levels['IDs'].index(message.author.id)]))
-                                       )
+        if message.content.lower() in ["bbrank","bblevel","bbinfo"] and message.author.id in Trusted_IDs:
+            level,xp_low,xp_up,remaining = lvl(levels['score'][levels['IDs'].index(message.author.id)],info=True)
+            Nmarks = 35
+            percentage_score = int(np.floor(Nmarks*remaining/(xp_up-xp_low) ))
+            banner = await get_banner(message.author.id)
+            embed = discord.Embed(colour = message.author.top_role.colour)
+            embed.set_author(name=message.author.nick,icon_url=message.author.avatar_url)
+            lst1 = ["Acoount created","Server joined","Top role","Current status"]
+            lst2 = [str(message.author.created_at)[:10],str(message.author.joined_at)[:10],message.author.top_role.name,str(message.author.activity)]
+            embed.add_field(name="User info"  , value=''.join(string_gen(lst1[:2],lst2[:2]))  ,inline=True)
+            embed.add_field(name="Server info", value=''.join(string_gen(lst1[2:],lst2[2:]))  ,inline=True)
+            embed.add_field(name="Villain level: %i"%level, value="XP: %i `[%s%s]` %i\nCurrent amount of XP: %i\nXP needed for next level: %i"%( xp_low,"#"*percentage_score,"-"*(Nmarks-percentage_score),xp_up,levels['score'][levels['IDs'].index(message.author.id)],remaining ),inline=False)
+            if banner != None:
+                embed.set_thumbnail(url=banner)
+            await message.channel.send(embed=embed)
         
         
         
@@ -807,11 +825,12 @@ async def on_message(message):
     if message.author.id in Trusted_IDs and message.content.lower() == 'engage fed mode':
         all_channels = [s.id for s in message.guild.text_channels]
         # print([client.get_channel(channel_id).server.me.permission for channel_id in all_channels])
-        for chid in all_channels:
-            try:
-                await Logger(channel_id=chid,skipper=None,LOC = "./Fed Data/")
-            except:
-                print("Skipped channel (No permission) %s" %client.get_channel(chid).name)
+        for chid in all_channels: 
+            if chid not in fed_skip:
+                try:
+                    await Logger(channel_id=chid,skipper=None,LOC = "./Fed Data/")
+                except:
+                    print("Skipped channel (No permission) %s" %client.get_channel(chid).name)
         await message.reply('Fed mode finished',delete_after=10)
     
 
