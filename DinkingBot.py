@@ -709,6 +709,8 @@ async def on_message(message):
     if message.author.id in Trusted_IDs and message.content.lower() == "reset score":
         reset_score()
         await message.channel.send("Score reset complete",delete_after=5)
+    if message.author.id in Trusted_IDs and message.content.lower() == "send score":
+        await message.author.send("Here is the file",file=discord.File("./Fed Data/SavedScore.csv"))
     
     
     
