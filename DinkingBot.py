@@ -558,7 +558,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 
 bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
-bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode","bbrank","bblevel","bbinfo"]
+bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode","bbrank","bblevel","bbinfo","bbranks","bbrankings","bblevels"]
 def Contains_command(message):
     space_index = message.find(' ')
     if space_index != -1:
@@ -735,8 +735,50 @@ async def on_message(message):
             if banner != None:
                 embed.set_thumbnail(url=banner)
             await message.channel.send(embed=embed)
-        
-        
+    
+    
+    if message.author != client.user and message.channel.id in repeat_channels and message.content.lower() in ["bbranks","bbrankings","bblevels"]:
+        async def ranking_bar():
+            level = levels['score']
+            arr0 = np.zeros([len(level),4],dtype=np.int64)
+            arr0[:,1] = np.arange(len(level))
+            arr0[:,0] = level
+            arr0[:,2] = levels['IDs']
+            arr0[:,3] = lvl(level)
+            
+            arr = arr0[np.argsort(arr0[:,0])][::-1][:10]
+            
+            
+            
+            names = []
+            if "fed_skip" in globals():
+                for Id in arr[:,2]:
+                    user = await client.fetch_user(Id)
+                    names.append(str(user.name))
+            else:
+                for i in range(len(arr)):
+                    names.append("Placeholder. %i"% (i+1))
+            
+            
+            col = ['slategrey']*10
+            col[0] = 'gold'
+            col[1] = 'silver'
+            col[2] = 'darkorange'
+
+            
+            plt.figure(figsize=(6,4))
+            ax = plt.subplot(111)
+            ax.bar(np.arange(len(arr))+1,arr[:,3],color=col)
+            plt.tight_layout()
+            for i, (name, height) in enumerate(zip(names, arr[:,3])):
+                ax.text(i+1, height, ' ' + name, color='seashell',
+                        ha='center', va='top', rotation=-90, fontsize=15)
+            plt.xticks(np.arange(len(arr))+1)
+            plt.axis('off')
+            plt.savefig("Bar.png", transparent=True)
+        await ranking_bar()
+        file = discord.File("Bar.png",filename="Ranking.png")
+        await message.channel.send("Top 10 ranking", file=file)
         
         
         
@@ -832,7 +874,7 @@ async def on_message(message):
             print('%i done of %s at %i per sec' % (i,client.get_channel(channel_id).name,i/TD))
             print('Total time was %i seconds'%(TD))
             print('-----------------------------------------------------------')
-            await message.channel.send('Total of %i messaged logged in %s, taking %i minutes at %i messages per second' % ( i , client.get_channel(channel_id).name , (TD)/60 , i/(TD) ) ,delete_after=10)
+            await message.author.send('Total of %i messaged logged in %s, taking %i minutes at %i messages per second' % ( i , client.get_channel(channel_id).name , (TD)/60 , i/(TD) ) ,delete_after=60)
             df = pd.DataFrame({'author':author , 'message':messages , 'ID':id_author , 'date':date , "datetime":datetime , "channel":channel_ids})
             df.to_csv(LOC+'LoggedText%i.csv'%(channel_id),index=False)
 
@@ -848,7 +890,7 @@ async def on_message(message):
                     await Logger(channel_id=chid,skipper=None,LOC = "./Fed Data/")
                 except:
                     print("Skipped channel (No permission) %s" %client.get_channel(chid).name)
-        await message.reply('Fed mode finished',delete_after=10)
+        await message.author.send('Fed mode finished',delete_after=10)
     
 
     if (message.channel.id in Channels) and message.author.id not in blacklist:
