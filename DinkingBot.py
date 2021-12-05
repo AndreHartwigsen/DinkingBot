@@ -7,6 +7,7 @@ import os
 import sys
 import requests
 import markovify as mk
+import datetime
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 nest_asyncio.apply()
@@ -584,7 +585,7 @@ def contained_in_list(msg,lst=["villain","no you wont","fuck off","asshole","dic
 #--------------Levels--------------------------------------------------------------------------------------------
 fed_skip = [774356474054836235]
 
-import datetime
+
 epoch = datetime.datetime.utcfromtimestamp(0)
 def dt_to_time(dt):
     convert = datetime.datetime.strptime(dt,'%Y-%m-%d %H:%M:%S.%f')
@@ -597,9 +598,18 @@ bot_channels = [870997447374176267,863028160795115583,857670559038570507]
 
 def reset_score(LOC = "./Fed Data/",time_points = 60):
     files = [s for s in os.listdir(LOC) if "LoggedText" in s]
-    
-    
     master_file = pd.concat([pd.read_csv(LOC+s) for s in files])
+    
+    def N_msg(arr):
+        N = 0
+        if len(arr)>0:
+            N = 1
+            current_dt = arr[0]
+            for i in range(len(arr)-1):
+                if current_dt-arr[i+1]  >= time_points:
+                    current_dt = arr[i+1]
+                    N+=1
+        return N
     
     IDs = list(master_file['ID'])
     channel  = list(master_file['channel'])
@@ -610,12 +620,11 @@ def reset_score(LOC = "./Fed Data/",time_points = 60):
     score = np.zeros(len(users))
     end_time = []
     for i in range(len(users)):
-        spec_time = np.array(dt)[np.where(IDs == users[i])[0]]
-        spec_channel = np.array(channel)[np.where(IDs == users[i])[0]]
-        spec_diff = np.roll(spec_time,1)-spec_time
-        spec_diff[0] = time_points+1e-5
-        spec_villain = [np.sum(x == spec_channel) for x in bot_channels]
-        score[i] = np.sum(np.random.randint(points_lower,1+points_upper,np.sum(spec_diff >= time_points))) + villain_extra*sum(spec_villain)
+        spec_sel = np.where(IDs == users[i])[0]
+        spec_time = np.array(dt)[spec_sel]
+        spec_channel = np.array(channel)[spec_sel]
+        spec_time_villain = spec_time[  [i for i in range(len(spec_time)) if spec_channel[i] in bot_channels]  ]
+        score[i] = np.sum(np.random.randint(points_lower,1+points_upper,N_msg(spec_time))) + villain_extra*N_msg(spec_time_villain)
         end_time.append(spec_time[-1])
     
     df = pd.DataFrame({ "User_ID":users , "score":score , "last_msg":end_time })
