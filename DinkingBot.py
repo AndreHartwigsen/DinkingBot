@@ -786,7 +786,7 @@ async def on_message(message):
         
         
         
-        
+    if message.author != client.user and message.channel.id in repeat_channels:
         message_history = [];all_message_history = [];ID_history = [];all_ID_history = []
         NNN = N_requirement
         if message.channel.id == 730787222445490252: NNN = N_requirement + N_pink_extra
