@@ -558,7 +558,7 @@ def countdown_timer_left(ID,counter='hey',cooldown = 6*60**2):
 
 
 bc = ["bbdink","bbprost","bbskål","bbreset","bbtally",'bbprob','bbprobbig','bbprob big','bbtime','bbvillain','coinflip']
-bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode","bbrank","bblevel","bbinfo","bbranks","bbrankings","bblevels"]
+bc2 = ['shitpost','cum','help','lortepæl','bbhelp','cope','seethe','sborra',"engage fed mode","bbrank","bblevel","bbinfo","bbranks","bbrankings","bblevels","bbactivity"]
 def Contains_command(message):
     space_index = message.find(' ')
     if space_index != -1:
@@ -661,12 +661,16 @@ def lvl(points,a=400,b=500,info = False):
     else:
         return level,xp_low,xp_up,remaining
 
-def score_update(ID,timestamp,channel):
+def score_update(message,LOC = "./Fed Data/"):
+    ID = message.author.id
+    timestamp = message.created_at
+    channel = message.channel.id
+    
     level_up = False
     mpier = 0
     if channel in bot_channels:
         mpier = villain_extra
-    dt = dt_to_time(timestamp)
+    dt = dt_to_time(str(timestamp))
     if ID in levels['IDs']:
         idx = levels['IDs'].index(ID)
         if dt - levels['time'][idx] >= 60:
@@ -679,8 +683,39 @@ def score_update(ID,timestamp,channel):
         levels['IDs'].append(ID)
         levels['score'].append(np.random.randint(points_lower,1+points_upper) + mpier)
         levels['time'].append(dt)
-    return level_up
 
+    filename = 'LoggedText%i.csv'%(channel)
+    files = [s for s in os.listdir(LOC) if "LoggedText" in s]
+    if filename in files:
+        df = pd.DataFrame({'author':message.author.name , 'message':message.content , 'ID':ID , 'date':message.id , "datetime":timestamp , "channel":channel},index=[0])
+        dff = pd.read_csv(LOC+filename)
+        dfa = pd.concat([df,dff])
+        dfa.to_csv(LOC+'LoggedText%i.csv'%(channel),index=False)
+    return level_up
+def activity(ID,LOC = "./Fed Data/"):
+    files = [s for s in os.listdir(LOC) if "LoggedText" in s]
+    master_file = pd.concat([pd.read_csv(LOC+s) for s in files])
+    
+    sel = np.where(master_file['ID'] == ID)[0]
+    times = np.array([dt_to_time(s) for s in np.array(master_file['datetime'])[sel]])/(25*60**2)
+    times = times - min(times)
+    fig = plt.figure(figsize=(6,4))
+    fig.patch.set_facecolor("#2C2F33")
+    ax = plt.subplot(111)
+    plt.hist(times,100,fc="white")
+    ax.set(facecolor="#2C2F33")
+    plt.xlabel('days')
+    plt.ylabel('Number of messages')
+    ax.spines['bottom'].set_color('white')
+    ax.spines['top'].set_color('white') 
+    ax.spines['right'].set_color('white')
+    ax.spines['left'].set_color('white')
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    ax.yaxis.label.set_color('white')
+    ax.xaxis.label.set_color('white')
+    plt.tight_layout()
+    plt.savefig("act.png", transparent=True)
 #----------------------------------------------------------------------------------------------------------------
 
 async def get_banner(ID):
@@ -695,7 +730,7 @@ async def get_banner(ID):
 
 @client.event
 async def on_message(message):
-    if score_update(message.author.id, str(message.created_at),message.channel.id):
+    if score_update(message):
         await message.channel.send(  f"{message.author.nick} just gained **another** Villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
         
         
@@ -779,7 +814,22 @@ async def on_message(message):
         await ranking_bar()
         file = discord.File("Bar.png",filename="Ranking.png")
         await message.channel.send("Top 10 ranking", file=file)
+
+    if message.author != client.user and message.channel.id in repeat_channels and "bbactivity" in message.content.lower():
+        if len(message.content.lower()) == len("bbactivity"):
+            activity(message.author.id)
+            file = discord.File("act.png",filename="activity.png")
+            await message.channel.send(file=file)
+        else:
+            input_ID = int(message.content[len("bbactivity")+1:])
+            if input_ID in levels['IDs']:
+                activity(input_ID)
+                file = discord.File("act.png",filename="activity.png")
+                await message.channel.send(file=file)
+            else:
+                await message.channel.send('User %i not in archive' % input_ID)
         
+            
         
         
         
