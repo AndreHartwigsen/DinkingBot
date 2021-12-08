@@ -692,17 +692,17 @@ def score_update(message,LOC = "./Fed Data/"):
         dfa = pd.concat([df,dff])
         dfa.to_csv(LOC+'LoggedText%i.csv'%(channel),index=False)
     return level_up
-def activity(ID,LOC = "./Fed Data/"):
+def activity(ID,N=100,LOC = "./Fed Data/"):
     files = [s for s in os.listdir(LOC) if "LoggedText" in s]
     master_file = pd.concat([pd.read_csv(LOC+s) for s in files])
     
     sel = np.where(master_file['ID'] == ID)[0]
     times = np.array([dt_to_time(s) for s in np.array(master_file['datetime'])[sel]])/(25*60**2)
     times = times - min(times)
-    fig = plt.figure(figsize=(6,4))
+    fig = plt.figure(figsize=(5,4),dpi=200)
     fig.patch.set_facecolor("#2C2F33")
     ax = plt.subplot(111)
-    plt.hist(times,100,fc="white")
+    plt.hist(times,N,fc="white")
     ax.set(facecolor="#2C2F33")
     plt.xlabel('days')
     plt.ylabel('Number of messages')
@@ -821,9 +821,13 @@ async def on_message(message):
             file = discord.File("act.png",filename="activity.png")
             await message.channel.send(file=file)
         else:
-            input_ID = int(message.content[len("bbactivity")+1:])
+            input_values = [int(s) for s in message.content.split()[1:]]
+            input_ID = input_values[0]
+            N_bars = 75
+            if len(input_values)>1:
+                N_bars = input_values[1]
             if input_ID in levels['IDs']:
-                activity(input_ID)
+                activity(input_ID,N_bars)
                 file = discord.File("act.png",filename="activity.png")
                 await message.channel.send(file=file)
             else:
