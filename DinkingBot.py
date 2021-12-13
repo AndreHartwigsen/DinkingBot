@@ -327,7 +327,6 @@ def invalid_user_fix(txt,guild_id):
         IDS = guild_members[guild_ids.index(guild_id)]
         for i in range(len(mentions)):
             if mentions[i] not in IDS:
-                print('yes')
                 txt=txt.replace(str(mentions[i]),str(np.random.choice(IDS)))
         return txt
 
@@ -592,8 +591,8 @@ def dt_to_time(dt):
     return (convert - epoch).total_seconds()
 points_lower = 15
 points_upper = 25
-villain_extra  = 20
-bot_channels = [870997447374176267,863028160795115583,857670559038570507]
+villain_extra  = 30
+bot_channels = [870997447374176267,863028160795115583,857670559038570507,741123883884740618]
 
 
 def reset_score(LOC = "./Fed Data/",time_points = 60):
@@ -651,7 +650,7 @@ if "levels" not in locals():
             reset_score()
             levels = import_score()
 
-def lvl(points,a=400,b=500,info = False):
+def lvl(points,a=350,b=500,info = False):
     level = np.floor((-b+np.sqrt(2*a*np.asarray(points,dtype=np.int64)+b**2)) / a)+1
     xp_up = 1/2*a*level**2 + b*level
     xp_low =  1/2*a*(level-1)**2 + b*(level-1)
@@ -692,6 +691,16 @@ def score_update(message,LOC = "./Fed Data/"):
         dfa = pd.concat([df,dff])
         dfa.to_csv(LOC+'LoggedText%i.csv'%(channel),index=False)
     return level_up
+def rank_score(ID):
+    level = levels['score']
+    arr0 = np.zeros([len(level),4],dtype=np.int64)
+    arr0[:,0] = level
+    arr0[:,1] = np.arange(len(level))
+    arr0[:,2] = levels['IDs']
+    arr0[:,3] = lvl(level)
+    
+    arr = arr0[np.argsort(arr0[:,0])][::-1]
+    return list(arr[:,2]).index(ID)+1
 def activity(ID,N=100,LOC = "./Fed Data/"):
     files = [s for s in os.listdir(LOC) if "LoggedText" in s]
     master_file = pd.concat([pd.read_csv(LOC+s) for s in files])
@@ -699,7 +708,7 @@ def activity(ID,N=100,LOC = "./Fed Data/"):
     sel = np.where(master_file['ID'] == ID)[0]
     times = np.array([dt_to_time(s) for s in np.array(master_file['datetime'])[sel]])/(25*60**2)
     times = times - min(times)
-    fig = plt.figure(figsize=(5,4),dpi=200)
+    fig = plt.figure(figsize=(6,4),dpi=200)
     fig.patch.set_facecolor("#2C2F33")
     ax = plt.subplot(111)
     plt.hist(times,N,fc="white")
@@ -730,17 +739,33 @@ async def get_banner(ID):
 
 @client.event
 async def on_message(message):
+    speak_permission = True
+    global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
+    
+    
+    
+    if message.author.id in Trusted_IDs and message.content.lower() == "cheat score":
+        level,xp_low,xp_up,remaining = lvl(levels['score'][levels['IDs'].index(message.author.id)],info=True)
+        levels['score'][levels['IDs'].index(message.author.id)] = xp_up-1
+
     if score_update(message):
-        await message.channel.send(  f"{message.author.nick} just gained **another** Villain level! \nThey are now level %i" % int(lvl(levels['score'][levels['IDs'].index(message.author.id)])) )
-        
-        
+        if message.guild.id == 730787222445490247:    
+            await client.get_channel(741123883884740618).send( f"{message.author.mention} just gained a Villain level! \nThey are now level %i and rank #%i." % (int(lvl(levels['score'][levels['IDs'].index(message.author.id)])),rank_score(message.author.id)) )
+        elif message.guild.id == 565951111589265430:
+            await message.channel.send(f"{message.author.mention} just gained a Villain level! \nThey are now level %i and rank #%i." % (int(lvl(levels['score'][levels['IDs'].index(message.author.id)])),rank_score(message.author.id)) )
+            # if len(message.attachments)>0:
+            #     await message.channel.send(message.content)
+            #     await message.channel.send(message.attachments[0].url)
+            # else:
+            #     await message.channel.send(message.content)
+
+    
     
         
         
         
         
-    speak_permission = True
-    global Fun, admin_dink_time_override, Trusted_IDs, Sponsor_message, Temp_Trusted , Fredag_post
+    
     if message.author.id in Trusted_IDs and message.content.lower() == "reset score":
         reset_score()
         await message.channel.send("Score reset complete",delete_after=5)
@@ -754,7 +779,7 @@ async def on_message(message):
     
     
     
-    if message.author != client.user and message.channel.id in repeat_channels:
+    if message.author != client.user and message.channel.id in bot_channels:
         if message.content.lower() in ["bbrank","bblevel","bbinfo"]:
             level,xp_low,xp_up,remaining = lvl(levels['score'][levels['IDs'].index(message.author.id)],info=True)
             Nmarks = 35
@@ -766,13 +791,15 @@ async def on_message(message):
             lst2 = [str(message.author.created_at)[:10],str(message.author.joined_at)[:10],message.author.top_role.name,str(message.author.activity)]
             embed.add_field(name="User info"  , value=''.join(string_gen(lst1[:2],lst2[:2]))  ,inline=True)
             embed.add_field(name="Server info", value=''.join(string_gen(lst1[2:],lst2[2:]))  ,inline=True)
-            embed.add_field(name="Villain level: %i"%level, value="XP: %i `[%s%s]` %i\nCurrent amount of XP: %i\nXP needed for next level: %i"%( xp_low,"#"*(Nmarks-percentage_score),"-"*percentage_score,xp_up,levels['score'][levels['IDs'].index(message.author.id)],remaining ),inline=False)
+            embed.add_field(name="Villain level: %i\nVillain rank: %i"% (level,rank_score(message.author.id)), 
+                            value="XP: %i `[%s%s]` %i\nCurrent amount of XP: %i\nXP needed for next level: %i"
+                            %( xp_low,"#"*(Nmarks-percentage_score),"-"*percentage_score,xp_up,levels['score'][levels['IDs'].index(message.author.id)],remaining ),inline=False)
             if banner != None:
                 embed.set_thumbnail(url=banner)
             await message.channel.send(embed=embed)
     
     
-    if message.author != client.user and message.channel.id in repeat_channels and message.content.lower() in ["bbranks","bbrankings","bblevels"]:
+    if message.author != client.user and message.channel.id in bot_channels and message.content.lower() in ["bbranks","bbrankings","bblevels"]:
         async def ranking_bar():
             level = levels['score']
             arr0 = np.zeros([len(level),4],dtype=np.int64)
@@ -815,7 +842,7 @@ async def on_message(message):
         file = discord.File("Bar.png",filename="Ranking.png")
         await message.channel.send("Top 10 ranking", file=file)
 
-    if message.author != client.user and message.channel.id in repeat_channels and "bbactivity" in message.content.lower():
+    if message.author != client.user and message.channel.id in bot_channels and "bbactivity" in message.content.lower():
         if len(message.content.lower()) == len("bbactivity"):
             activity(message.author.id)
             file = discord.File("act.png",filename="activity.png")
