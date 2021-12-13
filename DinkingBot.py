@@ -622,7 +622,7 @@ def reset_score(LOC = "./Fed Data/",time_points = 60):
         spec_sel = np.where(IDs == users[i])[0]
         spec_time = np.array(dt)[spec_sel]
         spec_channel = np.array(channel)[spec_sel]
-        spec_time_villain = spec_time[  [i for i in range(len(spec_time)) if spec_channel[i] in bot_channels]  ]
+        spec_time_villain = spec_time[  [i for i in range(len(spec_time)) if spec_channel[i] in [857670559038570507,863028160795115583,870997447374176267]]  ]
         score[i] = np.sum(np.random.randint(points_lower,1+points_upper,N_msg(spec_time))) + villain_extra*N_msg(spec_time_villain)
         end_time.append(spec_time[-1])
     
