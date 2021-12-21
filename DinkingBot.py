@@ -383,22 +383,48 @@ def MarkovModel2(directory='./MarkovSource/',Text_only = False):
 text_model = MarkovModel2()
 
 
-def Sentence_relevance(question=None,length=250,Nattempt=500,remove_characters=[',','.','?','!','villain','Villain']):
+sentences = []
+def fill_markov_library(N=5000,length=250):
+    while len(sentences)<N:
+        sentences.append(text_model.make_short_sentence(length))
+
+def Sentence_relevance(question=None,length=250,Nattempt=50,remove_characters=[',','.','?','!'],
+                       ignore_words = ['villain','bot','fed','fedbot','markov','the','a','an','that','when','what','your','and','not','you','dont']
+                       ):
+    t_start = time.time()
+    def unique(lst):
+        ret = []
+        for s in lst:
+            if s not in ret:
+                ret.append(s)
+        return ret
+
+    global sentences
     if question == None:
         return text_model.make_short_sentence(length)
     else:
+        if len(sentences)<5000:
+            for i in range(Nattempt):
+                sentences.append(text_model.make_short_sentence(length))
+            sentences = unique(sentences)
+        
+        
         for s in remove_characters:
             question.replace(s,'')
-        words = question.lower().split()
-        sentences = []
-        Ncommon = np.zeros(Nattempt)
-        for i in range(Nattempt):
-            sentences.append(text_model.make_short_sentence(length))
-            for y in range(len(words)):
-                if words[y] in sentences[i].lower():
-                    if len(words[y])>3 and words[y] != 'villain':
-                        Ncommon[i] += 1
-        return sentences[np.argmax(Ncommon)]
+        words = unique(question.lower().split())
+        Ncommon = np.zeros(len(sentences))
+        for y in range(len(words)):
+            if len(words[y])>0 and words[y] not in ignore_words:
+                for i in range(len(sentences)):
+                    if words[y] in sentences[i].lower().split():
+                        Ncommon[i] += len(words[y])
+        returner = sentences[np.argmax(Ncommon)]
+        sentences.remove(returner)
+        if time.time()-t_start > 3:
+            return returner
+        else:
+            time.sleep(3)
+            return returner
 
 
 markov_chance_percentage = 15
@@ -628,9 +654,8 @@ def reset_score(LOC = "./Fed Data/",time_points = 60):
     
     df = pd.DataFrame({ "User_ID":users , "score":score , "last_msg":end_time })
     df.to_csv(LOC+"SavedScore.csv",index=False)
-    if "levels" not in locals():
-        global levels
-        levels = import_score()
+    global levels
+    levels = import_score()
 
 def import_score(LOC = "./Fed Data/"):
     levels = {}
@@ -648,7 +673,6 @@ if "levels" not in locals():
             levels = import_score()
         else:
             reset_score()
-            levels = import_score()
 
 def lvl(points,a=350,b=500,info = False):
     level = np.floor((-b+np.sqrt(2*a*np.asarray(points,dtype=np.int64)+b**2)) / a)+1
@@ -682,7 +706,10 @@ def score_update(message,LOC = "./Fed Data/"):
         levels['IDs'].append(ID)
         levels['score'].append(np.random.randint(points_lower,1+points_upper) + mpier)
         levels['time'].append(dt)
-
+    
+    df = pd.DataFrame({ "User_ID":levels['IDs'] , "score":levels['score'] , "last_msg":levels['time'] })
+    df.to_csv(LOC+"SavedScore.csv",index=False)
+    
     filename = 'LoggedText%i.csv'%(channel)
     files = [s for s in os.listdir(LOC) if "LoggedText" in s]
     if filename in files:
